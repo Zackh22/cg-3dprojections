@@ -1,5 +1,38 @@
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
+
+    /*
+    PRP - projection reference point - used to calculate DOP
+    SRP - scene reference point - center of scene
+    VUP - view up vector
+    */
+
+    /*
+    VRC calculations
+        n: normalized (PRP - SRP)
+        u: normalized (VUP X n-axis)
+        v: n-axis X u-axis
+    */
+
+    let n = prp - srp;
+    n = n.normalize();
+    let u = vup.cross(n);
+    u = u.normalize();
+    let v = n.cross(u);
+
+    /*
+    Window calculations
+        center of window: [(left + right) / 2 , (bottom + top) / 2]
+        DOP: CW - PRP
+    */
+
+    /*
+        Parallel projection:
+            DOP is z-axis
+            View-plane is z=0 plane
+    */
+
+
     // 1. translate PRP to origin
 
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
@@ -25,6 +58,10 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     // sparz = 1 / far
     // spar = [sparx 0 0 0; 0 spary 0 0; 0 0 sparz; 0; 0 0 0 1]
 
+    // npar = shpar * tpar * shpar * R * T(-PRP)
+    // clip
+    // mpar
+
     // ...
     // let transform = Matrix.multiply([...]);
     // return transform;
@@ -32,6 +69,38 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
+
+    /*
+    PRP - projection reference point - position of camera (equivalent to COP)
+    SRP - scene reference point - center of scene
+    VUP - view up vector
+    */
+
+    /*
+    VRC calculations
+        n: normalized (PRP - SRP)
+        u: normalized (VUP X n-axis)
+        v: n-axis X u-axis
+    */
+
+    let n = prp - srp;
+    n = n.normalize();
+    let u = vup.cross(n);
+    u = u.normalize();
+    let v = n.cross(u);
+
+    /*
+    Window calculations
+        center of window: [(left + right) / 2 , (bottom + top) / 2]
+        DOP: CW - PRP
+    */
+
+    /*
+        Perspective projection:
+            PRP at origin
+            View-plane parallel to XY-plane
+    */
+
     // 1. translate PRP to origin
 
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
@@ -53,6 +122,11 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // sperz = 1 / far
     // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
 
+    // general perspective projection
+    // nper = sper * shpar * R * T(-PRP)
+    // Clip
+    // Mper
+
     // ...
     // let transform = Matrix.multiply([...]);
     // return transform;
@@ -60,15 +134,28 @@ function mat4x4Perspective(prp, srp, vup, clip) {
 
 // create a 4x4 matrix to project a parallel image on the z=0 plane
 function mat4x4MPar() {
+    // parallel - ignore z
+    // xp = x
+    // yp = y
+    // zp = 0
     let mpar = new Matrix(4, 4);
-    // mpar.values = ...;
+    mpar.values = [[1, 0, 0, 0],
+                     [0, 1, 0, 0],
+                     [0, 0, 0, 0],
+                     [0, 0, 0, 1]];
     return mpar;
 }
 
 // create a 4x4 matrix to project a perspective image on the z=-1 plane
 function mat4x4MPer() {
+    // general perspective projection
+    // project to back
+    // d = -1
     let mper = new Matrix(4, 4);
-    // mper.values = ...;
+    mper.values = [[1, 0, 0, 0],
+                     [0, 1, 0, 0],
+                     [0, 0, 1, 0],
+                     [0, 0, -1, 0]];
     return mper;
 }
 
