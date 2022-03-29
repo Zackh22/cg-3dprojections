@@ -37,15 +37,32 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
 
+    let T = Vector4(0, 0, 0, 0);
+    Mat4x4Translate(T, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
+
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
 
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
+    let R = Vector4(0, 0, 0, 0);
+    R.values = [[u.x, u.y, u.z, 0],
+               [v.x, v.y, v.z, 0],
+               [n.x, n.y, n.z, 0],
+               [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
 
     // shxpar = -DOPx / DOPz
+    let shxpar = 0;
+
     // shypar = -DOPy / DOPz
+    let shypar = 0;
+
     // shpar = [1 0 shxpar 0; 0 1 shypar 0; 0 0 1 0; 0 0 0 1]
+    let shpar = Vector4(0, 0, 0, 0);
+    shpar.values = [[1, 0, shxpar, 0],
+                   [0, 1, shypar, 0],
+                   [0, 0, 1, 0],
+                   [0, 0, 0, 1]];
 
     // 4. translate near clipping plane to origin
 
