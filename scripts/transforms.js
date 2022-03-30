@@ -26,12 +26,6 @@ function mat4x4Parallel(prp, srp, vup, clip) {
         DOP: CW - PRP
     */
 
-    /*
-        Parallel projection:
-            DOP is z-axis
-            View-plane is z=0 plane
-    */
-
 
     // 1. translate PRP to origin
 
@@ -87,60 +81,80 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
 
-    /*
-    PRP - projection reference point - position of camera (equivalent to COP)
-    SRP - scene reference point - center of scene
-    VUP - view up vector
-    */
+    // clip(left, right, bottom, top, near, far)
+    let left = clip[0];
+    let right = clip[1];
+    let bottom = clip[2];
+    let top = clip[3];
+    let near = clip[4];
+    let far = clip[5];
 
-    /*
-    VRC calculations
-        n: normalized (PRP - SRP)
-        u: normalized (VUP X n-axis)
-        v: n-axis X u-axis
-    */
-
+    
+    // PRP - projection reference point - position of camera (equivalent to COP)
+    // SRP - scene reference point - center of scene
+    // VUP - view up vector
+    
+    // VRC calculations
+    //    n: normalized (PRP - SRP)
+    //    u: normalized (VUP X n-axis)
+    //    v: n-axis X u-axis
+    
     let n = prp - srp;
     n = n.normalize();
     let u = vup.cross(n);
     u = u.normalize();
     let v = n.cross(u);
 
-    /*
-    Window calculations
-        center of window: [(left + right) / 2 , (bottom + top) / 2]
-        DOP: CW - PRP
-    */
+    // Window calculations
+    //     center of window: [(left + right) / 2 , (bottom + top) / 2]
+    var cow = [(left + right) / 2, (bottom + top) / 2];
+    //     DOP: CW - PRP
+    var dop = cow - prp;
 
-    /*
-        Perspective projection:
-            PRP at origin
-            View-plane parallel to XY-plane
-    */
+    let mper = mat4x4MPer();
 
     // 1. translate PRP to origin
 
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
+    let tprp = Mat4x4Translate(mper, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
 
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
 
+    let R = Vector4(0,0,0,0);
+    R.values = [[u.x, u.y, u.z, 0],
+                [v.x, v.y, v.z, 0],
+                [n.x, n.y, n.z, 1],
+                [0, 0, 0, 1]];
+
     // 3. shear such that CW is on the z-axis
 
     // shxpar = -DOPx / DOPz
+    let shxpar = -1 * dop.x / dop.z;
     // shypar = -DOPy / DOPz
+    let shypar = -1 * dop.y / dop.z;
     // shpar = [1 0 shxpar 0; 0 1 shypar 0; 0 0 1 0; 0 0 0 1]
+    let shpar = [[1, 0, shxpar, 0],
+                [0, 1, shypar, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]];
     
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
 
-    // sperx = (2 * near) / ((right - left) * far)
-    // spery = (2 * near) / ((top - bottom) * far)
-    // sperz = 1 / far
+    let sperx = (2 * near) / ((right - left) * far);
+
+    let spery = (2 * near) / ((top - bottom) * far);
+    let sperz = 1 / far;
     // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
+    let sper = [[sperx, 0, 0, 0],
+               [0, spery, 0, 0],
+               [0, 0, sperz, 0],
+               [0, 0, 0, 1]];
 
     // general perspective projection
     // nper = sper * shpar * R * T(-PRP)
+    let nper = sper * shpar * R * tprp;
     // Clip
     // Mper
 

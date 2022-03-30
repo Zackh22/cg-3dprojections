@@ -90,9 +90,19 @@ function drawScene() {
     // TODO: implement drawing here!
     // For each model, for each edge
     //  * transform to canonical view volume
+    if(scene.type == 'perspective') {
+        // perspective
+        mat4x4Perspective(scene.prp, scene.srp, scene.vup, scene.clip);
+    } else {
+        // parallel
+        mat4x4Parallel(scene.prp, scene.srp, scene.vup, scene.clip);
+    }
     //  * clip in 3D
+
     //  * project to 2D
+    
     //  * draw line
+
 }
 
 // Get outcode for vertex (parallel view volume)
@@ -150,8 +160,18 @@ function clipLineParallel(line) {
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
-    
+
     // TODO: implement clipping here!
+
+    if(out0 | out1 == 0) {
+        result = line; // if both outcodes are zero the line is completely inside
+    } // trivial accept
+    else if(out0 & out1 != 0) {
+        result = null; // if the result of a bitwise and of the outcodes is not zero, the line is completely outside
+    } // trivial reject
+    else {
+        // TODO: complete 3D line clipping algorithm for parallel
+    }
     
     return result;
 }
@@ -165,6 +185,40 @@ function clipLinePerspective(line, z_min) {
     let out1 = outcodePerspective(p1, z_min);
     
     // TODO: implement clipping here!
+
+    if(out0 | out1 == 0) {
+        result = line;
+    } // trivial accept
+    if(out0 & out1 != 0) {
+        result = null;
+    } // trivial reject
+    else {
+        /*
+        parametric 3d line equations:
+        x(t) = x0 + t(x1 - x0)
+        y(t) = y0 + t(y1 - y0)
+        z(t) = z0 + t(z1 - z0)
+        */
+       let x0 = pt0.x;
+       let x1 = pt1.x;
+       let y0 = pt0.y;
+       let y1 = pt1.y;
+       let z0 = pt0.z;
+       let z1 = pt1.z;
+       let zmin = z0;
+       if(z1 < z0) zmin = z1;
+       let delx = x1 - x0;
+       let dely = y1 - y0;
+       let delz = z1 - z0;
+       let tLeft = (-x0 + z0) / (delx - delz);
+       let tBottom = (-1 * y0 + z0) / (dely - delz);
+       let tNear = (z0 - zmin) / (-1 * delz);
+       let tRight = (x0 + z0) / (-1 * delx - delz);
+       let tTop = (y0 + z0) / (-1 * dely - delz);
+       let tFar = (-1 * z0 - 1) / (delz);
+
+       // TODO: complete 3D line clipping algorithm for perspective
+    }
     
     return result;
 }
