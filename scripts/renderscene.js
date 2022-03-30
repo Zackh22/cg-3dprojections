@@ -171,6 +171,27 @@ function clipLineParallel(line) {
     } // trivial reject
     else {
         // TODO: complete 3D line clipping algorithm for parallel
+        // at least one endpoint is outside the view frustum
+        var outcode;
+        if (out0 != 0) outcode = out0;
+        else outcode = out1;
+
+        let x0 = pt0.x;
+        let x1 = pt1.x;
+        let y0 = pt0.y;
+        let y1 = pt1.y;
+        let z0 = pt0.z;
+        let z1 = pt1.z;
+
+        // use parametric line equations to compute intersections
+        // test for planes x = 1, x = -1, y = 1, y = -1, z = 0, z = -1
+        /*
+        parametric 3d line equations:
+        x(t) = x0 + t(x1 - x0)
+        y(t) = y0 + t(y1 - y0)
+        z(t) = z0 + t(z1 - z0)
+        */
+
     }
     
     return result;
