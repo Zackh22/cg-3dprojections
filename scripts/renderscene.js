@@ -160,38 +160,59 @@ function clipLineParallel(line) {
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
+    let t, selectpt, selectout, done = false;
 
     // TODO: implement clipping here!
+    while(!done) {
+        if(out0 | out1 == 0) { // trivial accept
+            result = line; // if both outcodes are zero the line is completely inside
+            done = true;
+        } else if(out0 & out1 != 0) { // trival reject
+            result = null; // if the result of a bitwise and of the outcodes is not zero, the line is completely outside
+            done = true;
+        } else {
+            // TODO: complete 3D line clipping algorithm for parallel
+            // at least one endpoint is outside the view frustum
+            var outcode;
+            if (out0 != 0) {
+                selectpt = p0;
+                selectout = out0;
+            } else {
+                selectpt = pt1;
+                selectout = out1;
+            }
 
-    if(out0 | out1 == 0) {
-        result = line; // if both outcodes are zero the line is completely inside
-    } // trivial accept
-    else if(out0 & out1 != 0) {
-        result = null; // if the result of a bitwise and of the outcodes is not zero, the line is completely outside
-    } // trivial reject
-    else {
-        // TODO: complete 3D line clipping algorithm for parallel
-        // at least one endpoint is outside the view frustum
-        var outcode;
-        if (out0 != 0) outcode = out0;
-        else outcode = out1;
+            if ((selectout & LEFT) != 0) { // clip to left edge
+                
+            } else if ((selectout & RIGHT) != 0) { // clip to right edge
 
-        let x0 = pt0.x;
-        let x1 = pt1.x;
-        let y0 = pt0.y;
-        let y1 = pt1.y;
-        let z0 = pt0.z;
-        let z1 = pt1.z;
+            } else if ((selectout & BOTTOM) != 0) { // clip to bottom edge
 
-        // use parametric line equations to compute intersections
-        // test for planes x = 1, x = -1, y = 1, y = -1, z = 0, z = -1
-        /*
-        parametric 3d line equations:
-        x(t) = x0 + t(x1 - x0)
-        y(t) = y0 + t(y1 - y0)
-        z(t) = z0 + t(z1 - z0)
-        */
+            } else if ((selectout & TOP) != 0) { // clip to top edge
 
+            } else if ((selectout & NEAR) != 0) { // clip to near edge
+                
+            } else if ((selectout & FAR) != 0) { // clip to far edge
+                
+            }
+
+            let x0 = pt0.x;
+            let x1 = pt1.x;
+            let y0 = pt0.y;
+            let y1 = pt1.y;
+            let z0 = pt0.z;
+            let z1 = pt1.z;
+
+            // use parametric line equations to compute intersections
+            // test for planes x = 1, x = -1, y = 1, y = -1, z = 0, z = -1
+            /*
+            parametric 3d line equations:
+            x(t) = x0 + t(x1 - x0)
+            y(t) = y0 + t(y1 - y0)
+            z(t) = z0 + t(z1 - z0)
+            */
+
+        }
     }
     
     return result;
