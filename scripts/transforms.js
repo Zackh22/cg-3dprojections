@@ -1,5 +1,10 @@
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
+    console.log("IN mat4x4Parallel");
+    console.log(prp);
+    console.log(srp);
+    console.log(vup);
+    console.log(clip);
 
     /*
     PRP - projection reference point - used to calculate DOP
@@ -14,10 +19,10 @@ function mat4x4Parallel(prp, srp, vup, clip) {
         v: n-axis X u-axis
     */
 
-    let n = prp - srp;
-    n = n.normalize();
+    let n = prp.subtract(srp);
+    n.normalize();
     let u = vup.cross(n);
-    u = u.normalize();
+    u.normalize();
     let v = n.cross(u);
 
     /*
@@ -38,9 +43,9 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
     let R = Vector4(0, 0, 0, 0);
-    R.values = [[u.x, u.y, u.z, 0],
-               [v.x, v.y, v.z, 0],
-               [n.x, n.y, n.z, 0],
+    R.values = [[u[0], u[1], u[2], 0],
+               [v[0], v[1], v[2], 0],
+               [n[0], n[1], n[2], 0],
                [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
@@ -54,9 +59,9 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     // shpar = [1 0 shxpar 0; 0 1 shypar 0; 0 0 1 0; 0 0 0 1]
     let shpar = Vector4(0, 0, 0, 0);
     shpar.values = [[1, 0, shxpar, 0],
-                   [0, 1, shypar, 0],
-                   [0, 0, 1, 0],
-                   [0, 0, 0, 1]];
+                    [0, 1, shypar, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]];
 
     // 4. translate near clipping plane to origin
 
@@ -75,11 +80,16 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 
     // ...
     // let transform = Matrix.multiply([...]);
-    // return transform;
+    //return transform;
 }
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
+    console.log("IN FUNCTION mat4x4Perspective");
+    console.log(prp);
+    console.log(srp);
+    console.log(vup);
+    console.log(clip);
 
     // clip(left, right, bottom, top, near, far)
     let left = clip[0];
@@ -98,22 +108,22 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // Window calculations
     //     center of window: [(left + right) / 2 , (bottom + top) / 2]
     var cow = new Vector3((left + right) / 2, (bottom + top) / 2, -near);
-    //     DOP: CW - PRP
-    var dop = cow - prp;
+    //     DOP: CW - PRP, but prp is 0,0,0 in VRC
+    var dop = cow;
 
     let mper = mat4x4MPer();
 
     // 1. translate PRP to origin
-
+    console.log("STEP 1");
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
     //let tprp = Mat4x4Translate(mper, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
-    let neg_prp = new Vector3(-1 * prp.x, -1 * prp.y, -1 * prp.z);
+    let neg_prp = new Vector3(-1 * prp[0], -1 * prp[1], -1 * prp[2]);
     let translate = new Matrix(4, 4);
     mat4x4Identity(translate);
-    Mat4x4Translate(translate, neg_prp.x, neg_prp.y, neg_prp.z);
+    Mat4x4Translate(translate, neg_prp[0], neg_prp[1], neg_prp[2]);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-
+    console.log("STEP 2");
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
 
     // VRC calculations
@@ -128,24 +138,24 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let v = n.cross(u);
 
     let R = new Matrix(4, 4);
-    R.values = [[u.x, u.y, u.z, 0],
-                [v.x, v.y, v.z, 0],
-                [n.x, n.y, n.z, 1],
+    R.values = [[u[0], u[1], u[2], 0],
+                [v[0], v[1], v[2], 0],
+                [n[0], n[1], n[2], 1],
                 [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
-
+    console.log("STEP 3");
     // shxpar = -DOPx / DOPz
-    let shxpar = -1 * dop.x / dop.z;
+    let shxpar = -1 * dop[0] / dop[2];
     // shypar = -DOPy / DOPz
-    let shypar = -1 * dop.y / dop.z;
+    let shypar = -1 * dop[1] / dop[2];
     // shpar = [1 0 shxpar 0; 0 1 shypar 0; 0 0 1 0; 0 0 0 1]
     let shpar = new Matrix(4, 4);
     mat4x4Identity(shpar);
     Mat4x4ShearXY(shpar, shxpar, shypar);
     
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
-
+    console.log("STEP 4");
     let sperx = (2 * near) / ((right - left) * far);
 
     let spery = (2 * near) / ((top - bottom) * far);
@@ -156,7 +166,9 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let scale = new Matrix(4,4);
     mat4x4Identity(scale);
 
-    let transform = Matrix.multiply(scale, shear, rotate, translate);
+    console.log("calculate final transform matrix:");
+    // TODO: fix type error in multiply call below
+    let transform = Matrix.multiply(scale, shpar, R, translate);
 
     return transform;
 }

@@ -85,35 +85,55 @@ function animate(timestamp) {
 
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
+
     console.log(scene);
+
+    let sceneType = scene.view.type;
+    let modelLength = scene.models.length;
+    let prp = scene.view.prp;
+    //console.log(prp);
+    let srp = scene.view.srp;
+    //console.log(srp);
+    let vup = scene.view.vup;
+    //console.log(vup);
+    let clip = scene.view.clip;
+    //console.log(clip);
     
     // TODO: implement drawing here!
     // For each model, for each edge
-    for(var i = 0; i < scene.models.length; i++) { // loop through the models in the scene
+    for(var i = 0; i < modelLength; i++) { // loop through the models in the scene
         currentModel = scene.models[i];
 
         for(var j = 0; j < currentModel.edges.length; j++) { // loop through the edges in the current model
             currentEdge = currentModel.edges[j];
-
             //  * transform to canonical view volume
 
             let canonicalViewVolume;
             let mAndn;
 
-            if(scene.type == 'perspective') {
+            if(sceneType == "perspective") {
                 // perspective
-                canonicalViewVolume = mat4x4Perspective(scene.prp, scene.srp, scene.vup, scene.clip);
-                mAndn = Matrix.multiply([mat4x4MPer(), canonicalViewVolume]);
+                console.log("PERSPECTIVE");
+                canonicalViewVolume = mat4x4Perspective(prp, srp, vup, clip);
+                //mAndn = Matrix.multiply([mat4x4MPer(), canonicalViewVolume]);
             } else {
                 // parallel
-                canonicalViewVolume = mat4x4Parallel(scene.prp, scene.srp, scene.vup, scene.clip);
-                mAndn = Matrix.multiply([mat4x4MPar(), canonicalViewVolume]);
+                console.log("PARALLEL");
+                canonicalViewVolume = mat4x4Parallel(prp, srp, vup, clip);
+                //mAndn = Matrix.multiply([mat4x4MPar(), canonicalViewVolume]);
 
             }
 
+            /*
+            console.log(scene); // print the scene
+            console.log(scene.models.length); // print the number of models
+            console.log(scene.models);
+            console.log(scene.models[0].vertices.length);
+            */
+
             // convert pts to world view
-            for (let i = 0; i < scene.models.vertices.length; i++) {
-                let currentVertex = currentModel.vertices[i];
+            for (let k = 0; k < scene.models[i].vertices.length; k++) {
+                let currentVertex = currentModel.vertices[k];
                 let vertexMatrix = new Matrix(4, 1);
                 vertexMatrix.values = [currentVertex.x, currentVertex.y, currentVertex.z, currentVertex.w];
 
@@ -132,6 +152,7 @@ function drawScene() {
             
             //  * draw line
         }
+        console.log(" ");
     }
 }
 
