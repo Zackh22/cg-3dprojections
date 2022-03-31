@@ -93,21 +93,11 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // PRP - projection reference point - position of camera (equivalent to COP)
     // SRP - scene reference point - center of scene
     // VUP - view up vector
-    
-    // VRC calculations
-    //    n: normalized (PRP - SRP)
-    //    u: normalized (VUP X n-axis)
-    //    v: n-axis X u-axis
-    
-    let n = prp - srp;
-    n = n.normalize();
-    let u = vup.cross(n);
-    u = u.normalize();
-    let v = n.cross(u);
+
 
     // Window calculations
     //     center of window: [(left + right) / 2 , (bottom + top) / 2]
-    var cow = [(left + right) / 2, (bottom + top) / 2];
+    var cow = new Vector3((left + right) / 2, (bottom + top) / 2, -near);
     //     DOP: CW - PRP
     var dop = cow - prp;
 
@@ -116,13 +106,28 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // 1. translate PRP to origin
 
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
-    let tprp = Mat4x4Translate(mper, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
+    //let tprp = Mat4x4Translate(mper, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
+    let neg_prp = new Vector3(-1 * prp.x, -1 * prp.y, -1 * prp.z);
+    let translate = new Matrix(4, 4);
+    mat4x4Identity(translate);
+    Mat4x4Translate(translate, neg_prp.x, neg_prp.y, neg_prp.z);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
 
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
 
-    let R = Vector4(0,0,0,0);
+    // VRC calculations
+    //    n: normalized (PRP - SRP)
+    //    u: normalized (VUP X n-axis)
+    //    v: n-axis X u-axis
+
+    let n = prp.subtract(srp);
+    n.normalize();
+    let u = vup.cross(n);
+    u.normalize();
+    let v = n.cross(u);
+
+    let R = new Matrix(4, 4);
     R.values = [[u.x, u.y, u.z, 0],
                 [v.x, v.y, v.z, 0],
                 [n.x, n.y, n.z, 1],
@@ -135,32 +140,25 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // shypar = -DOPy / DOPz
     let shypar = -1 * dop.y / dop.z;
     // shpar = [1 0 shxpar 0; 0 1 shypar 0; 0 0 1 0; 0 0 0 1]
-    let shpar = [[1, 0, shxpar, 0],
-                [0, 1, shypar, 0],
-                [0, 0, 1, 0],
-                [0, 0, 0, 1]];
+    let shpar = new Matrix(4, 4);
+    mat4x4Identity(shpar);
+    Mat4x4ShearXY(shpar, shxpar, shypar);
     
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
 
     let sperx = (2 * near) / ((right - left) * far);
 
     let spery = (2 * near) / ((top - bottom) * far);
-    let sperz = 1 / far;
+    let sperz = (1 / far);
     // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
-    let sper = [[sperx, 0, 0, 0],
-               [0, spery, 0, 0],
-               [0, 0, sperz, 0],
-               [0, 0, 0, 1]];
+    let sper = new Vector3(sperx, spery, sperz);
 
-    // general perspective projection
-    // nper = sper * shpar * R * T(-PRP)
-    let nper = sper * shpar * R * tprp;
-    // Clip
-    // Mper
+    let scale = new Matrix(4,4);
+    mat4x4Identity(scale);
 
-    // ...
-    // let transform = Matrix.multiply([...]);
-    // return transform;
+    let transform = Matrix.multiply(scale, shear, rotate, translate);
+
+    return transform;
 }
 
 // create a 4x4 matrix to project a parallel image on the z=0 plane
