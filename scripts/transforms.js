@@ -146,9 +146,9 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // 3. shear such that CW is on the z-axis
     console.log("STEP 3");
     // shxpar = -DOPx / DOPz
-    let shxpar = -1 * dop[0] / dop[2];
+    let shxpar = -1 * dop.x / dop.z;
     // shypar = -DOPy / DOPz
-    let shypar = -1 * dop[1] / dop[2];
+    let shypar = -1 * dop.y / dop.z;
     // shpar = [1 0 shxpar 0; 0 1 shypar 0; 0 0 1 0; 0 0 0 1]
     let shpar = new Matrix(4, 4);
     mat4x4Identity(shpar);
@@ -161,10 +161,9 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let spery = (2 * near) / ((top - bottom) * far);
     let sperz = (1 / far);
     // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
-    let sper = new Vector3(sperx, spery, sperz);
 
     let scale = new Matrix(4,4);
-    mat4x4Identity(scale);
+    Mat4x4Scale(scale, sperx, spery, sperz);
 
     console.log("calculate final transform matrix:");
     // TODO: fix type error in multiply call below
@@ -172,7 +171,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     console.log(shpar);
     console.log(R);
     console.log(translate);
-    let transform = Matrix.multiply(scale, shpar, R, translate);
+    let transform = Matrix.multiply([scale, shpar, R, translate]);
 
     return transform;
 }
