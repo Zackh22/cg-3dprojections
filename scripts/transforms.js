@@ -166,7 +166,6 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     Mat4x4Scale(scale, sperx, spery, sperz);
 
     console.log("calculate final transform matrix:");
-    // TODO: fix type error in multiply call below
     console.log(scale);
     console.log(shpar);
     console.log(R);
