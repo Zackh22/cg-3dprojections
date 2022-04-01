@@ -86,10 +86,10 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
     console.log("IN FUNCTION mat4x4Perspective");
-    console.log(prp);
-    console.log(srp);
-    console.log(vup);
-    console.log(clip);
+    //console.log(prp);
+    //console.log(srp);
+    //console.log(vup);
+    //console.log(clip);
 
     // clip(left, right, bottom, top, near, far)
     let left = clip[0];
@@ -117,10 +117,10 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     console.log("STEP 1");
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
     //let tprp = Mat4x4Translate(mper, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
-    let neg_prp = new Vector3(-1 * prp[0], -1 * prp[1], -1 * prp[2]);
+    let neg_prp = new Vector3(-1 * prp.x, -1 * prp.y, -1 * prp.z);
     let translate = new Matrix(4, 4);
     mat4x4Identity(translate);
-    Mat4x4Translate(translate, neg_prp[0], neg_prp[1], neg_prp[2]);
+    Mat4x4Translate(translate, neg_prp.x, neg_prp.y, neg_prp.z);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
     console.log("STEP 2");
@@ -138,9 +138,9 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let v = n.cross(u);
 
     let R = new Matrix(4, 4);
-    R.values = [[u[0], u[1], u[2], 0],
-                [v[0], v[1], v[2], 0],
-                [n[0], n[1], n[2], 1],
+    R.values = [[u.x, u.y, u.z, 0],
+                [v.x, v.y, v.z, 0],
+                [n.x, n.y, n.z, 1],
                 [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
@@ -168,6 +168,10 @@ function mat4x4Perspective(prp, srp, vup, clip) {
 
     console.log("calculate final transform matrix:");
     // TODO: fix type error in multiply call below
+    console.log(scale);
+    console.log(shpar);
+    console.log(R);
+    console.log(translate);
     let transform = Matrix.multiply(scale, shpar, R, translate);
 
     return transform;
