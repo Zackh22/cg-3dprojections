@@ -1,10 +1,10 @@
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
-    console.log("IN mat4x4Parallel");
-    console.log(prp);
-    console.log(srp);
-    console.log(vup);
-    console.log(clip);
+    //console.log("IN mat4x4Parallel");
+    //console.log(prp);
+    //console.log(srp);
+    //console.log(vup);
+    //console.log(clip);
 
     /*
     PRP - projection reference point - used to calculate DOP

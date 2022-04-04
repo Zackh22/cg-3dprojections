@@ -134,17 +134,27 @@ function drawScene() {
             let currentVertex = scene.models[i].vertices[j];
             //verts.push(m_times_n.mult(currentVertex));
             verts.push( n.mult( scene.models[i].vertices[j] ));
-            console.log(verts[j]);
+            //console.log(verts[j]);
         }
     }
 
     //  * clip in 3D
     //  * project to 2D
     //  * draw line
+
+    console.log("LOOP RANGES: ");
+    console.log("number of models: (expect 1) "); console.log(scene.models.length);
+    console.log("number of edge arrays: (expect 7) "); console.log(scene.models[0].edges.length);
+
     for(let i = 0; i < scene.models.length; i++) { // loop through all models
-        for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edges in current model
-            for(let k = 0; k < scene.models[i].edges.length - 1; k++) { // loop through all edges in current model except for the last one
+        console.log("model idx: "); console.log(i);
+        for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
+            console.log(" edge array: "); console.log(scene.models[i].edges[j]);
+            for(let k = 0; k < ( scene.models[i].edges[i].length - 1 ); k++) { // loop through vertex indices
+                console.log(" k value: "); console.log(scene.models[i].edges[j][k]);
                 // assign two vertex indices
+                // if length = 6
+                // 0,1    1,2    2,3    3,4    4,5    5,0
                 let idx0 = scene.models[i].edges[j][k];
                 let idx1 = scene.models[i].edges[j][k+1];
                 // assign two vertices using the indices
@@ -153,8 +163,9 @@ function drawScene() {
                 let vert1 = verts[idx1];
                 console.log("verts:");console.log(vert0);console.log(vert1);
 
-                let pt0 = {x: vert0.x, y: vert0.y, z: vert0.z, w:vert0.w};
-                let pt1 = {x: vert1.x, y: vert1.y, z: vert1.z, w:vert1.w};
+                console.log(" type of vert0: "); console.log(typeof vert0);
+                let pt0 = {x: vert0, y: vert0, z: vert0, w:vert0};
+                let pt1 = {x: vert1, y: vert1, z: vert1, w:vert1};
 
 
                 // create a line between them to be clipped
