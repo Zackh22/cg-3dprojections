@@ -127,13 +127,14 @@ function drawScene() {
         // general parallel projection: Npar = Spar * Tpar * SHpar * R * T(-PRP)    (09 - 3D Projections Part 2 slide 15)
     }
 
+    // TODO: shift this into loop @ 152
     let verts = []; // empty array to hold verticies after they're multiplied by m_times_n
     for(let i = 0; i < scene.models.length; i++) { // loop through the models in the scene
         //  * transform to canonical view volume
         for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
             let currentVertex = scene.models[i].vertices[j];
             //verts.push(m_times_n.mult(currentVertex));
-            verts.push( n.mult( scene.models[i].vertices[j] ));
+            verts.push(Matrix.multiply( [n, scene.models[i].vertices[j] ] ));
             //console.log(verts[j]);
         }
     }
@@ -142,34 +143,35 @@ function drawScene() {
     //  * project to 2D
     //  * draw line
 
+    // TODO: fix typeerror in clipLinePerspective()
+
     console.log("LOOP RANGES: ");
-    console.log("number of models: (expect 1) "); console.log(scene.models.length);
-    console.log("number of edge arrays: (expect 7) "); console.log(scene.models[0].edges.length);
+    console.log("number of models: (expect 1) "); console.log(scene.models.length); // confirmed
+    console.log("number of edge arrays: (expect 7) "); console.log(scene.models[0].edges.length); // confirmed
 
     for(let i = 0; i < scene.models.length; i++) { // loop through all models
         console.log("model idx: "); console.log(i);
         for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
-            console.log(" edge array: "); console.log(scene.models[i].edges[j]);
-            for(let k = 0; k < ( scene.models[i].edges[i].length - 1 ); k++) { // loop through vertex indices
-                console.log(" k value: "); console.log(scene.models[i].edges[j][k]);
+            console.log(" edge array idx: "); console.log(j);
+            console.log("edge array: "); console.log(scene.models[i].edges[j]);
+            for(let k = 1; k < scene.models[i].edges[j].length; k++) { // loop through vertex indices
+                //console.log(" k value: "); console.log(scene.models[i].edges[j][k]);
                 // assign two vertex indices
+                // edges: [[0, 1, 2, 3, 4, 0],[5, 6, 7, 8, 9, 5],[0, 5],[1, 6],[2, 7],[3, 8],[4, 9]]
                 // if length = 6
                 // 0,1    1,2    2,3    3,4    4,5    5,0
-                let idx0 = scene.models[i].edges[j][k];
-                let idx1 = scene.models[i].edges[j][k+1];
+                let idx0 = scene.models[i].edges[j][k - 1];
+                let idx1 = scene.models[i].edges[j][k];
                 // assign two vertices using the indices
                 console.log("idxs:");console.log(idx0);console.log(idx1);
                 let vert0 = verts[idx0];
                 let vert1 = verts[idx1];
-                console.log("verts:");console.log(vert0);console.log(vert1);
+                //console.log("verts:");console.log(vert0);console.log(vert1);
 
-                console.log(" type of vert0: "); console.log(typeof vert0);
-                let pt0 = {x: vert0, y: vert0, z: vert0, w:vert0};
-                let pt1 = {x: vert1, y: vert1, z: vert1, w:vert1};
-
+                //console.log(" type of vert0: "); console.log(typeof vert0);
 
                 // create a line between them to be clipped
-                let tempLine = {pt0, pt1};
+                let tempLine = {pt0: vert0, pt1: vert1};
                 // clip the line based on view type
                 if(sceneType == "perspective") {
                     var clippedLine = clipLinePerspective(tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
@@ -345,7 +347,7 @@ function clipLineParallel(line) {
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLinePerspective(line, z_min) {
     console.log("clipLinePer");
-    //console.log(line);
+    console.log(line);
     let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
