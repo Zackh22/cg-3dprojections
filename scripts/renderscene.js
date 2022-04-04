@@ -85,8 +85,12 @@ function animate(timestamp) {
 
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
-
-    console.log(scene);
+    /*
+    console.log(scene); // print the scene
+    console.log(scene.models.length); // print the number of models
+    console.log(scene.models);
+    console.log(scene.models[0].vertices.length);
+    */
 
     let sceneType = scene.view.type;
     let modelLength = scene.models.length;
@@ -101,59 +105,77 @@ function drawScene() {
     
     // TODO: implement drawing here!
     // For each model, for each edge
-    for(var i = 0; i < modelLength; i++) { // loop through the models in the scene
-        currentModel = scene.models[i];
 
-        for(var j = 0; j < currentModel.edges.length; j++) { // loop through the edges in the current model
-            currentEdge = currentModel.edges[j];
-            //  * transform to canonical view volume
+    let m, n, m_times_n; // declaring here to avoid scope issues - gets value based on sceneType;
 
-            let canonicalViewVolume;
-            let mAndn;
+    if(sceneType == "perspective") {
+        // perspective
+        console.log("PERSPECTIVE");
 
-            if(sceneType == "perspective") {
-                // perspective
-                console.log("PERSPECTIVE");
-                canonicalViewVolume = mat4x4Perspective(prp, srp, vup, clip);
-                //mAndn = Matrix.multiply([mat4x4MPer(), canonicalViewVolume]);
-            } else {
-                // parallel
-                console.log("PARALLEL");
-                canonicalViewVolume = mat4x4Parallel(prp, srp, vup, clip);
-                //mAndn = Matrix.multiply([mat4x4MPar(), canonicalViewVolume]);
+        // general perspective projection: Nper = Sperh * SHpar * R * T(-PRP)   (09 - 3D Projections Part 2 slide 23)
+        m = mat4x4MPer();
+        n = mat4x4Perspective(prp, srp, vup, clip);
+        m_times_n = m.mult(n);
+    } else {
+        // parallel or assumed parallel if not defined
+        console.log("PARALLEL");
 
-            }
+        m = mat4x4MPar();
+        n = mat4x4Parallel(prp, srp, vup, clip);
+        m_times_n = m.mult(n);
 
-            /*
-            console.log(scene); // print the scene
-            console.log(scene.models.length); // print the number of models
-            console.log(scene.models);
-            console.log(scene.models[0].vertices.length);
-            */
-
-            // convert pts to world view
-            for (let k = 0; k < scene.models[i].vertices.length; k++) {
-                let currentVertex = currentModel.vertices[k];
-                let vertexMatrix = new Matrix(4, 1);
-                vertexMatrix.values = [currentVertex.x, currentVertex.y, currentVertex.z, currentVertex.w];
-
-            }
-
-            //  * clip in 3D
-            if(scene.type == 'perspective') {
-                // perspective
-
-            } else {
-                // parallel
-
-            }
-
-            //  * project to 2D
-            
-            //  * draw line
-        }
-        console.log(" ");
+        // general parallel projection: Npar = Spar * Tpar * SHpar * R * T(-PRP)    (09 - 3D Projections Part 2 slide 15)
     }
+
+    let verts = []; // empty array to hold verticies after they're multiplied by m_times_n
+    for(let i = 0; i < scene.models.length; i++) { // loop through the models in the scene
+        //  * transform to canonical view volume
+        for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
+            let currentVertex = scene.models[i].vertices[j];
+            //verts.push(m_times_n.mult(currentVertex));
+            verts.push( n.mult( scene.models[i].vertices[j] ));
+            console.log(verts[j]);
+        }
+    }
+
+    //  * clip in 3D
+    //  * project to 2D
+    //  * draw line
+    for(let i = 0; i < scene.models.length; i++) { // loop through all models
+        for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edges in current model
+            for(let k = 0; k < scene.models[i].edges.length - 1; k++) { // loop through all edges in current model except for the last one
+                // assign two vertex indices
+                let idx0 = scene.models[i].edges[j][k];
+                let idx1 = scene.models[i].edges[j][k+1];
+                // assign two vertices using the indices
+                console.log("idxs:");console.log(idx0);console.log(idx1);
+                let vert0 = verts[idx0];
+                let vert1 = verts[idx1];
+                console.log("verts:");console.log(vert0);console.log(vert1);
+
+                let pt0 = {x: vert0.x, y: vert0.y, z: vert0.z, w:vert0.w};
+                let pt1 = {x: vert1.x, y: vert1.y, z: vert1.z, w:vert1.w};
+
+
+                // create a line between them to be clipped
+                let tempLine = {pt0, pt1};
+                // clip the line based on view type
+                if(sceneType == "perspective") {
+                    var clippedLine = clipLinePerspective(tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
+                } else {
+                    var clippedLine = clipLineParallel(tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
+                }
+                // draw the clipped line
+                // get the "w" values to convert back to cartesian
+                let w1 = clippedLine.pt0[2]; 
+                let w2 = clippedLine.pt1[2];
+                drawLine( ( clippedLine.pt0[0] / w1 ), ( clippedLine.pt0[1] / w1 ), ( clippedLine.pt1[0] / w2 ), ( clippedLine.pt1[1] / w2 ));
+                //drawLine(             x1,                             y1,                         x2,                                 y2          );
+
+            }
+        }
+    }
+
 }
 
 // Get outcode for vertex (parallel view volume)
@@ -311,46 +333,118 @@ function clipLineParallel(line) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLinePerspective(line, z_min) {
+    console.log("clipLinePer");
+    //console.log(line);
     let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodePerspective(p0, z_min);
     let out1 = outcodePerspective(p1, z_min);
+
+    let done = false;
     
-    // TODO: implement clipping here!
+    // TODO: complete 3D line clipping algorithm for perspective
 
-    if(out0 | out1 == 0) {
-        result = line;
-    } // trivial accept
-    if(out0 & out1 != 0) {
-        result = null;
-    } // trivial reject
-    else {
-        /*
-        parametric 3d line equations:
-        x(t) = x0 + t(x1 - x0)
-        y(t) = y0 + t(y1 - y0)
-        z(t) = z0 + t(z1 - z0)
-        */
-       let x0 = pt0.x;
-       let x1 = pt1.x;
-       let y0 = pt0.y;
-       let y1 = pt1.y;
-       let z0 = pt0.z;
-       let z1 = pt1.z;
-       let delx = x1 - x0;
-       let dely = y1 - y0;
-       let delz = z1 - z0;
-       let tLeft = (-x0 + z0) / (delx - delz);
-       let tBottom = (-1 * y0 + z0) / (dely - delz);
-       let tNear = (z0 - z_min) / (-1 * delz);
-       let tRight = (x0 + z0) / (-1 * delx - delz);
-       let tTop = (y0 + z0) / (-1 * dely - delz);
-       let tFar = (-1 * z0 - 1) / (delz);
+    while(!done) {
+        if(out0 | out1 == 0) {
+            result = line; // trivial accept
+            done = true;
+            break;
+        } else if(out0 & out1 != 0) {
+            result = null; // trivial reject
+            done = true;
+            break;
+        } else {
+            // at least one endpoint is outside the view frustum
+            var outcode, t, x , y, z = null;
 
-       // TODO: complete 3D line clipping algorithm for perspective
+            if (out0 != 0) {
+                outcode = out0;
+            } else {
+                outcode = out1;
+            }
+
+            // declaring variables to avoid repetitive calculations
+            let x0 = p0.x;
+            let y0 = p0.y;
+            let z0 = p0.z;
+            let x1 = p1.x;
+            let y1 = p1.y;
+            let z1 = p1.z;
+            let delX = x1 - x0;
+            let delY = y1 - y0;
+            let delZ = z1 - z0;
+
+            if ((selectout & LEFT) != 0) { // clip to left edge
+
+                t = (( -x0 + z0 ) / ( delX - delZ ));
+
+                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
+                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
+                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
+
+            } else if ((selectout & RIGHT) != 0) { // clip to right edge
+
+                t = (( x0 + z0 ) / ( -delX - delZ));
+
+                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
+                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
+                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
+
+            } else if ((selectout & BOTTOM) != 0) { // clip to bottom edge
+
+                t = (( -y0 + z0 ) / ( delY - delZ ));
+
+                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
+                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
+                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
+
+            } else if ((selectout & TOP) != 0) { // clip to top edge
+
+                t = (( y0 + z0 ) / ( -delY - delZ ));
+
+                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
+                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
+                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
+                
+            } else if ((selectout & NEAR) != 0) { // clip to near edge
+
+                t = (( z0 - z_min ) / ( -delZ ));
+
+                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
+                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
+                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
+                
+            } else if ((selectout & FAR) != 0) { // clip to far edge
+
+                t = (( -z0 - 1 ) / ( delZ ));
+
+                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
+                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
+                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
+                
+            }
+            if (outcode === out0) {
+
+                p0.x = x;
+                p0.y = y;
+                p0.z = z;
+                out0 = outcodePerspective(p0, z_min);
+
+            } else {
+
+                p1.x = x;
+                p1.y = y;
+                p1.z = z;
+                
+            }
+
+            line.pt0 = p0;
+            line.pt1 = pt1;
+            result = line;
+
+        }
     }
-    
     return result;
 }
 

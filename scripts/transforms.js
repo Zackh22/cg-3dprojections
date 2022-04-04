@@ -85,7 +85,7 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
-    console.log("IN FUNCTION mat4x4Perspective");
+    //console.log("IN FUNCTION mat4x4Perspective");
     //console.log(prp);
     //console.log(srp);
     //console.log(vup);
@@ -114,7 +114,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let mper = mat4x4MPer();
 
     // 1. translate PRP to origin
-    console.log("STEP 1");
+    //console.log("STEP 1");
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
     //let tprp = Mat4x4Translate(mper, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
     let neg_prp = new Vector3(-1 * prp.x, -1 * prp.y, -1 * prp.z);
@@ -123,7 +123,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     Mat4x4Translate(translate, neg_prp.x, neg_prp.y, neg_prp.z);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-    console.log("STEP 2");
+    //console.log("STEP 2");
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
 
     // VRC calculations
@@ -144,7 +144,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
                 [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
-    console.log("STEP 3");
+    //console.log("STEP 3");
     // shxpar = -DOPx / DOPz
     let shxpar = -1 * dop.x / dop.z;
     // shypar = -DOPy / DOPz
@@ -155,7 +155,7 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     Mat4x4ShearXY(shpar, shxpar, shypar);
     
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
-    console.log("STEP 4");
+    //console.log("STEP 4");
     let sperx = (2 * near) / ((right - left) * far);
 
     let spery = (2 * near) / ((top - bottom) * far);
@@ -165,11 +165,11 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let scale = new Matrix(4,4);
     Mat4x4Scale(scale, sperx, spery, sperz);
 
-    console.log("calculate final transform matrix:");
-    console.log(scale);
-    console.log(shpar);
-    console.log(R);
-    console.log(translate);
+    //console.log("calculate final transform matrix:");
+    //console.log(scale);
+    //console.log(shpar);
+    //console.log(R);
+    //console.log(translate);
     let transform = Matrix.multiply([scale, shpar, R, translate]);
 
     return transform;
