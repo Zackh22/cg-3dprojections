@@ -24,11 +24,34 @@ function init() {
     // initial scene... feel free to change this
     scene = {
         view: {
+             
+            //ORIGINAL:
             type: 'perspective',
             prp: Vector3(44, 20, -16),
             srp: Vector3(20, 20, -40),
             vup: Vector3(0, 1, 0),
             clip: [-19, 5, -10, 8, 12, 100]
+            
+
+            /*
+            // head-on view
+            type: 'perspective',
+            prp: Vector3(10, 9, 0),
+            srp: Vector3(10, 9, -30),
+            vup: Vector3(0, 1, 0),
+            // left, right, bottom, top, near, far
+            clip: [-11, 11, -11, 11, 30, 100]
+            */
+
+            /*
+            // side view
+            type: 'perspective',
+            prp: Vector3(38, 10, -45),
+            srp: Vector3(20, 10, -45),
+            vup: Vector3(0, 1, 0),
+            // left, right, bottom, top, near, far
+            clip: [-16, 16, -15, 17, 18, 100]
+            */
         },
         models: [
             {
@@ -108,18 +131,6 @@ function drawScene() {
 
     // ********** BEGIN TEST OF DRAWING HOUSE WITHOUT TRANSFORMATIONS OR CLIPPING **********
     /*
-    let verts = []; // empty array to hold verticies after they're multiplied by m_times_n
-    for(let i = 0; i < scene.models.length; i++) { // loop through the models in the scene
-
-        for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
-            let currentVertex = scene.models[i].vertices[j];
-            verts.push( currentVertex );
-        }
-
-    }
-
-    // now we have an array of unchanged vertices for the object
-
     for(let i = 0; i < scene.models.length; i++) { // going through models in scene
         for(let j = 0; j < scene.models[i].edges.length; j++) { // going through edge arrays
             for(let k = 1; k < scene.models[i].edges[j].length; k++) { // going through values in each edge array
@@ -127,11 +138,12 @@ function drawScene() {
                 let idx0 = scene.models[i].edges[j][k - 1];
                 let idx1 = scene.models[i].edges[j][k];
                 // assign two vertices using the indices
-                let vert0 = verts[idx0];
-                let vert1 = verts[idx1];
+                let vert0 = scene.models[i].vertices[idx0];
+                let vert1 = scene.models[i].vertices[idx1];
                 // create a line between them to be clipped
                 let lineToDraw = {pt0: vert0, pt1: vert1};
                 console.log("line to draw: "); console.log(lineToDraw);
+                console.log()
                 drawLine(lineToDraw.pt0.x, lineToDraw.pt0.y, lineToDraw.pt1.x, lineToDraw.pt1.y);
             }
         }
@@ -162,27 +174,15 @@ function drawScene() {
         // general parallel projection: Npar = Spar * Tpar * SHpar * R * T(-PRP)    (09 - 3D Projections Part 2 slide 15)
     }
 
-    // // TODO: shift this into loop @ 152
-    // let verts = []; // empty array to hold verticies after they're multiplied by m_times_n
-    // for(let i = 0; i < scene.models.length; i++) { // loop through the models in the scene
-    //     //  * transform to canonical view volume
-    //     for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
-    //         let currentVertex = scene.models[i].vertices[j];
-    //         //verts.push(m_times_n.mult(currentVertex));
-    //         verts.push(Matrix.multiply( [n, scene.models[i].vertices[j] ] ));
-    //         //console.log(verts[j]);
-    //     }
-    // }
-
     //  * clip in 3D
     //  * project to 2D
     //  * draw line
 
-    // TODO: fix typeerror in clipLinePerspective()
-
     //console.log("LOOP RANGES: ");
     //console.log("number of models: (expect 1) "); console.log(scene.models.length); // confirmed
     //console.log("number of edge arrays: (expect 7) "); console.log(scene.models[0].edges.length); // confirmed
+
+    
 
     for(let i = 0; i < scene.models.length; i++) { // loop through all models
         //console.log("model idx: "); console.log(i);
@@ -190,15 +190,17 @@ function drawScene() {
         let verts = [];
         for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
             
-            verts.push( scene.models[i].vertices[j] );
+            //verts.push( scene.models[i].vertices[j] );
             
-            //verts.push(Matrix.multiply([ m_times_n , scene.models[i].vertices[j] ]));
+            verts.push(Matrix.multiply([ m_times_n , scene.models[i].vertices[j] ])); // THIS SHRINKS THE GRID FOR SOME REASON
         }        
 
         for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
             //console.log(" edge array idx: "); console.log(j);
             //console.log("edge array: "); console.log(scene.models[i].edges[j]);
             for(let k = 1; k < scene.models[i].edges[j].length; k++) { // loop through vertex indices
+
+
                 //console.log(" k value: "); console.log(scene.models[i].edges[j][k]);
                 // assign two vertex indices
                 let idx0 = scene.models[i].edges[j][k - 1];
@@ -209,6 +211,11 @@ function drawScene() {
                 let vert1 = verts[idx1];
                 //console.log("verts:");console.log(vert0);console.log(vert1);
 
+                let testLine = {pt0: vert0, pt1: vert1};
+                //drawLine(testLine);
+
+                
+                
                 // create a line between them to be clipped
                 let tempLine = {pt0: vert0, pt1: vert1};
                 // clip the line based on view type
@@ -226,24 +233,32 @@ function drawScene() {
                 // vertices in range [-1, 1]
                 // must transform them to window/framebuffer units
                 let V = new Matrix(4, 4);
+                mat4x4Identity(V);
                 let width = view.width;
                 let height = view.height;
                 V.values = [[ ( width / 2 ), 0, 0, ( width / 2 )],
                             [ 0, ( height / 2 ), 0, ( height / 2 )],
                             [ 0, 0, 1, 0],
                             [ 0, 0, 0, 1]];
-                
-                let projection = Matrix.mult( clippedLine, V );
+                console.log("clipped line:"); console.log(clippedLine);
+                let projP0 = Matrix.multiply( V, clippedLine.pt0 );
+                console.log(projP0);
+                let projP1 = Matrix.multiply( V, clippedLine.pt1 );
+                console.log("ProjP1: "); console.log(projP1);
+                let projection;
+                console.log("Projection: "); console.log(projection);
 
-                drawLine( ( projection.pt0.x ), ( projection.pt0.y ), ( projection.pt1.x ), ( projection.pt1.y ));
-                //drawLine( ( clippedLine.pt0.x ), ( clippedLine.pt0.y ), ( clippedLine.pt1.x ), ( clippedLine.pt1.y ));
+                //drawLine( ( projection.pt0.x ), ( projection.pt0.y ), ( projection.pt1.x ), ( projection.pt1.y ));
+                drawLine( ( clippedLine.pt0.x ), ( clippedLine.pt0.y ), ( clippedLine.pt1.x ), ( clippedLine.pt1.y ));
                 //drawLine(             x1,                             y1,                         x2,                                 y2          );
+
+                
 
             }
         }
     }
 
-
+    
 
 }
 
@@ -433,7 +448,7 @@ function clipLinePerspective(line, z_min) {
                 outcode = out1;
             }
 
-            // declaring variables to avoid repetitive calculations
+            // declaring variables to avoid repetitive code
             let x0 = p0.x;
             let y0 = p0.y;
             let z0 = p0.z;
@@ -444,55 +459,36 @@ function clipLinePerspective(line, z_min) {
             let delY = y1 - y0;
             let delZ = z1 - z0;
 
-            if ((selectout & LEFT) != 0) { // clip to left edge
+            if ((outcode & LEFT) != 0) { // clip to left edge
 
                 t = (( -x0 + z0 ) / ( delX - delZ ));
 
-                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
-                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
-                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
-
-            } else if ((selectout & RIGHT) != 0) { // clip to right edge
+            } else if ((outcode & RIGHT) != 0) { // clip to right edge
 
                 t = (( x0 + z0 ) / ( -delX - delZ));
 
-                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
-                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
-                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
-
-            } else if ((selectout & BOTTOM) != 0) { // clip to bottom edge
+            } else if ((outcode & BOTTOM) != 0) { // clip to bottom edge
 
                 t = (( -y0 + z0 ) / ( delY - delZ ));
 
-                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
-                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
-                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
-
-            } else if ((selectout & TOP) != 0) { // clip to top edge
+            } else if ((outcode & TOP) != 0) { // clip to top edge
 
                 t = (( y0 + z0 ) / ( -delY - delZ ));
-
-                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
-                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
-                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
                 
-            } else if ((selectout & NEAR) != 0) { // clip to near edge
+            } else if ((outcode & NEAR) != 0) { // clip to near edge
 
                 t = (( z0 - z_min ) / ( -delZ ));
-
-                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
-                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
-                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
                 
-            } else if ((selectout & FAR) != 0) { // clip to far edge
+            } else if ((outcode & FAR) != 0) { // clip to far edge
 
                 t = (( -z0 - 1 ) / ( delZ ));
 
-                x = (( 1 - t ) * p0.x ) + ( t * p1.x );
-                y = (( 1 - t ) * p0.y ) + ( t * p1.y );
-                z = (( 1 - t ) * p0.z ) + ( t * p1.z );
-                
             }
+
+            x = (( 1 - t ) * p0.x ) + ( t * p1.x );
+            y = (( 1 - t ) * p0.y ) + ( t * p1.y );
+            z = (( 1 - t ) * p0.z ) + ( t * p1.z );
+
             if (outcode === out0) {
 
                 p0.x = x;
@@ -509,7 +505,7 @@ function clipLinePerspective(line, z_min) {
             }
 
             line.pt0 = p0;
-            line.pt1 = pt1;
+            line.pt1 = p1;
             result = line;
 
         }
