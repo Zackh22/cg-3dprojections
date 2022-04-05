@@ -218,12 +218,25 @@ function drawScene() {
                     var clippedLine = clipLineParallel(tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
                 }
                 // draw the clipped line
-                // get the "w" values to convert back to cartesian
-                let w1 = clippedLine.pt0[3]; 
-                let w2 = clippedLine.pt1[3];
-//                drawLine( ( clippedLine.pt0[0] / w1 ), ( clippedLine.pt0[1] / w1 ), ( clippedLine.pt1[0] / w2 ), ( clippedLine.pt1[1] / w2 ));
-                drawLine( ( clippedLine.pt0[0] ), ( clippedLine.pt0[1] ), ( clippedLine.pt1[0] ), ( clippedLine.pt1[1] ));
+                // TODO: figure out where to use the z-values from the clippedLine coordinates
+                let z0 = clippedLine.pt0.z; 
+                let z1 = clippedLine.pt1.z;
 
+                // after performing projections on the canonical view volume, models have x and y
+                // vertices in range [-1, 1]
+                // must transform them to window/framebuffer units
+                let V = new Matrix(4, 4);
+                let width = view.width;
+                let height = view.height;
+                V.values = [[ ( width / 2 ), 0, 0, ( width / 2 )],
+                            [ 0, ( height / 2 ), 0, ( height / 2 )],
+                            [ 0, 0, 1, 0],
+                            [ 0, 0, 0, 1]];
+                
+                let projection = Matrix.mult( clippedLine, V );
+
+                drawLine( ( projection.pt0.x ), ( projection.pt0.y ), ( projection.pt1.x ), ( projection.pt1.y ));
+                //drawLine( ( clippedLine.pt0.x ), ( clippedLine.pt0.y ), ( clippedLine.pt1.x ), ( clippedLine.pt1.y ));
                 //drawLine(             x1,                             y1,                         x2,                                 y2          );
 
             }
