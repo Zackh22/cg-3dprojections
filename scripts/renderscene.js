@@ -107,7 +107,7 @@ function drawScene() {
     // For each model, for each edge
 
     // ********** BEGIN TEST OF DRAWING HOUSE WITHOUT TRANSFORMATIONS OR CLIPPING **********
-
+    /*
     let verts = []; // empty array to hold verticies after they're multiplied by m_times_n
     for(let i = 0; i < scene.models.length; i++) { // loop through the models in the scene
 
@@ -136,10 +136,10 @@ function drawScene() {
             }
         }
     }
-
+    */
     // ********** END TEST OF DRAWING HOUSE WITHOUT TRANSFORMATIONS OR CLIPPING **********
 
-/*    
+    
 
     let m, n, m_times_n; // declaring here to avoid scope issues - gets value based on sceneType;
 
@@ -230,7 +230,7 @@ function drawScene() {
         }
     }
 
-*/
+
 
 }
 
