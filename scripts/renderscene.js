@@ -80,7 +80,7 @@ function animate(timestamp) {
 
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
-    // window.requestAnimationFrame(animate);
+    //window.requestAnimationFrame(animate);
 }
 
 // Main drawing code - use information contained in variable `scene`
@@ -106,6 +106,41 @@ function drawScene() {
     // TODO: implement drawing here!
     // For each model, for each edge
 
+    // ********** BEGIN TEST OF DRAWING HOUSE WITHOUT TRANSFORMATIONS OR CLIPPING **********
+
+    let verts = []; // empty array to hold verticies after they're multiplied by m_times_n
+    for(let i = 0; i < scene.models.length; i++) { // loop through the models in the scene
+
+        for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
+            let currentVertex = scene.models[i].vertices[j];
+            verts.push( currentVertex );
+        }
+
+    }
+
+    // now we have an array of unchanged vertices for the object
+
+    for(let i = 0; i < scene.models.length; i++) { // going through models in scene
+        for(let j = 0; j < scene.models[i].edges.length; j++) { // going through edge arrays
+            for(let k = 1; k < scene.models[i].edges[j].length; k++) { // going through values in each edge array
+                // assign two vertex indices
+                let idx0 = scene.models[i].edges[j][k - 1];
+                let idx1 = scene.models[i].edges[j][k];
+                // assign two vertices using the indices
+                let vert0 = verts[idx0];
+                let vert1 = verts[idx1];
+                // create a line between them to be clipped
+                let lineToDraw = {pt0: vert0, pt1: vert1};
+                console.log("line to draw: "); console.log(lineToDraw);
+                drawLine(lineToDraw.pt0.x, lineToDraw.pt0.y, lineToDraw.pt1.x, lineToDraw.pt1.y);
+            }
+        }
+    }
+
+    // ********** END TEST OF DRAWING HOUSE WITHOUT TRANSFORMATIONS OR CLIPPING **********
+
+/*    
+
     let m, n, m_times_n; // declaring here to avoid scope issues - gets value based on sceneType;
 
     if(sceneType == "perspective") {
@@ -127,17 +162,17 @@ function drawScene() {
         // general parallel projection: Npar = Spar * Tpar * SHpar * R * T(-PRP)    (09 - 3D Projections Part 2 slide 15)
     }
 
-    // TODO: shift this into loop @ 152
-    let verts = []; // empty array to hold verticies after they're multiplied by m_times_n
-    for(let i = 0; i < scene.models.length; i++) { // loop through the models in the scene
-        //  * transform to canonical view volume
-        for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
-            let currentVertex = scene.models[i].vertices[j];
-            //verts.push(m_times_n.mult(currentVertex));
-            verts.push(Matrix.multiply( [n, scene.models[i].vertices[j] ] ));
-            //console.log(verts[j]);
-        }
-    }
+    // // TODO: shift this into loop @ 152
+    // let verts = []; // empty array to hold verticies after they're multiplied by m_times_n
+    // for(let i = 0; i < scene.models.length; i++) { // loop through the models in the scene
+    //     //  * transform to canonical view volume
+    //     for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
+    //         let currentVertex = scene.models[i].vertices[j];
+    //         //verts.push(m_times_n.mult(currentVertex));
+    //         verts.push(Matrix.multiply( [n, scene.models[i].vertices[j] ] ));
+    //         //console.log(verts[j]);
+    //     }
+    // }
 
     //  * clip in 3D
     //  * project to 2D
@@ -145,30 +180,34 @@ function drawScene() {
 
     // TODO: fix typeerror in clipLinePerspective()
 
-    console.log("LOOP RANGES: ");
-    console.log("number of models: (expect 1) "); console.log(scene.models.length); // confirmed
-    console.log("number of edge arrays: (expect 7) "); console.log(scene.models[0].edges.length); // confirmed
+    //console.log("LOOP RANGES: ");
+    //console.log("number of models: (expect 1) "); console.log(scene.models.length); // confirmed
+    //console.log("number of edge arrays: (expect 7) "); console.log(scene.models[0].edges.length); // confirmed
 
     for(let i = 0; i < scene.models.length; i++) { // loop through all models
-        console.log("model idx: "); console.log(i);
+        //console.log("model idx: "); console.log(i);
+
+        let verts = [];
+        for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
+            
+            verts.push( scene.models[i].vertices[j] );
+            
+            //verts.push(Matrix.multiply([ m_times_n , scene.models[i].vertices[j] ]));
+        }        
+
         for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
-            console.log(" edge array idx: "); console.log(j);
-            console.log("edge array: "); console.log(scene.models[i].edges[j]);
+            //console.log(" edge array idx: "); console.log(j);
+            //console.log("edge array: "); console.log(scene.models[i].edges[j]);
             for(let k = 1; k < scene.models[i].edges[j].length; k++) { // loop through vertex indices
                 //console.log(" k value: "); console.log(scene.models[i].edges[j][k]);
                 // assign two vertex indices
-                // edges: [[0, 1, 2, 3, 4, 0],[5, 6, 7, 8, 9, 5],[0, 5],[1, 6],[2, 7],[3, 8],[4, 9]]
-                // if length = 6
-                // 0,1    1,2    2,3    3,4    4,5    5,0
                 let idx0 = scene.models[i].edges[j][k - 1];
                 let idx1 = scene.models[i].edges[j][k];
                 // assign two vertices using the indices
-                console.log("idxs:");console.log(idx0);console.log(idx1);
+                //console.log("idxs:");console.log(idx0);console.log(idx1);
                 let vert0 = verts[idx0];
                 let vert1 = verts[idx1];
                 //console.log("verts:");console.log(vert0);console.log(vert1);
-
-                //console.log(" type of vert0: "); console.log(typeof vert0);
 
                 // create a line between them to be clipped
                 let tempLine = {pt0: vert0, pt1: vert1};
@@ -180,14 +219,18 @@ function drawScene() {
                 }
                 // draw the clipped line
                 // get the "w" values to convert back to cartesian
-                let w1 = clippedLine.pt0[2]; 
-                let w2 = clippedLine.pt1[2];
-                drawLine( ( clippedLine.pt0[0] / w1 ), ( clippedLine.pt0[1] / w1 ), ( clippedLine.pt1[0] / w2 ), ( clippedLine.pt1[1] / w2 ));
+                let w1 = clippedLine.pt0[3]; 
+                let w2 = clippedLine.pt1[3];
+//                drawLine( ( clippedLine.pt0[0] / w1 ), ( clippedLine.pt0[1] / w1 ), ( clippedLine.pt1[0] / w2 ), ( clippedLine.pt1[1] / w2 ));
+                drawLine( ( clippedLine.pt0[0] ), ( clippedLine.pt0[1] ), ( clippedLine.pt1[0] ), ( clippedLine.pt1[1] ));
+
                 //drawLine(             x1,                             y1,                         x2,                                 y2          );
 
             }
         }
     }
+
+*/
 
 }
 
@@ -346,8 +389,8 @@ function clipLineParallel(line) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLinePerspective(line, z_min) {
-    console.log("clipLinePer");
-    console.log(line);
+    //console.log("clipLinePer");
+    //console.log(line);
     let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
