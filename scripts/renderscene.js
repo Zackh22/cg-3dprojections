@@ -25,33 +25,58 @@ function init() {
     scene = {
         view: {
              
-            //ORIGINAL:
-            type: 'perspective',
-            prp: Vector3(44, 20, -16),
-            srp: Vector3(20, 20, -40),
-            vup: Vector3(0, 1, 0),
-            clip: [-19, 5, -10, 8, 12, 100]
+            //ORIGINAL:                                 CONFIRMED TO WORK
+            // type: 'perspective',
+            // prp: Vector3(44, 20, -16),
+            // srp: Vector3(20, 20, -40),
+            // vup: Vector3(0, 1, 0),
+            // clip: [-19, 5, -10, 8, 12, 100]
             
 
-            /*
-            // head-on view
-            type: 'perspective',
-            prp: Vector3(10, 9, 0),
-            srp: Vector3(10, 9, -30),
-            vup: Vector3(0, 1, 0),
-            // left, right, bottom, top, near, far
-            clip: [-11, 11, -11, 11, 30, 100]
-            */
+            
+            // head-on view                             CONFIRMED TO WORK
+            // type: 'perspective',
+            // prp: Vector3(10, 9, 0),
+            // srp: Vector3(10, 9, -30),
+            // vup: Vector3(0, 1, 0),
+            // // left, right, bottom, top, near, far
+            // clip: [-11, 11, -11, 11, 30, 100]
+            
 
-            /*
-            // side view
-            type: 'perspective',
-            prp: Vector3(38, 10, -45),
+            
+            // side view                                DOES NOT WORK - TODO: DEBUG
+            // type: 'perspective',
+            // prp: Vector3(38, 10, -45),               // works when PRP z-value > -20
+            // srp: Vector3(20, 10, -45),
+            // vup: Vector3(0, 1, 0),
+            // // left, right, bottom, top, near, far
+            // clip: [-16, 16, -15, 17, 18, 100]
+
+            // side view - modified PRP                 CONFIRMED TO WORK
+            // type: 'perspective',
+            // prp: Vector3(38, 10, 0),
+            // srp: Vector3(20, 10, -45),
+            // vup: Vector3(0, 1, 0),
+            // // left, right, bottom, top, near, far
+            // clip: [-16, 16, -15, 17, 18, 100]
+
+            // side view - modified                 CONFIRMED TO WORK
+            // type: 'perspective',
+            // prp: Vector3(38, 10, -15),
+            // srp: Vector3(20, 10, -45),
+            // vup: Vector3(0, 1, 0),
+            // // left, right, bottom, top, near, far
+            // clip: [-16, 16, -15, 17, 18, 100]
+
+            // side view - modified
+            type: 'parallel',
+            prp: Vector3(0, 0, 0),
             srp: Vector3(20, 10, -45),
             vup: Vector3(0, 1, 0),
             // left, right, bottom, top, near, far
             clip: [-16, 16, -15, 17, 18, 100]
-            */
+
+            
         },
         models: [
             {
@@ -125,6 +150,15 @@ function drawScene() {
     //console.log(vup);
     let clip = scene.view.clip;
     //console.log(clip);
+
+    let width = view.width;
+    let height = view.height;
+
+    let window = new Matrix(4, 4);
+    window.values = [[ ( width / 2 ), 0, 0, ( width / 2 )],
+                    [ 0, ( height / 2 ), 0, ( height / 2 )],
+                    [ 0, 0, 1, 0],
+                    [ 0, 0, 0, 1]];
     
     // TODO: implement drawing here!
     // For each model, for each edge
@@ -153,7 +187,7 @@ function drawScene() {
 
     
 
-    let m, n, m_times_n; // declaring here to avoid scope issues - gets value based on sceneType;
+    let m, n; // declaring here to avoid scope issues - gets value based on sceneType;
 
     if(sceneType == "perspective") {
         // perspective
@@ -162,14 +196,12 @@ function drawScene() {
         // general perspective projection: Nper = Sperh * SHpar * R * T(-PRP)   (09 - 3D Projections Part 2 slide 23)
         m = mat4x4MPer();
         n = mat4x4Perspective(prp, srp, vup, clip);
-        m_times_n = m.mult(n);
     } else {
         // parallel or assumed parallel if not defined
         console.log("PARALLEL");
 
         m = mat4x4MPar();
         n = mat4x4Parallel(prp, srp, vup, clip);
-        m_times_n = m.mult(n);
 
         // general parallel projection: Npar = Spar * Tpar * SHpar * R * T(-PRP)    (09 - 3D Projections Part 2 slide 15)
     }
@@ -192,7 +224,7 @@ function drawScene() {
             
             //verts.push( scene.models[i].vertices[j] );
             
-            verts.push(Matrix.multiply([ m_times_n , scene.models[i].vertices[j] ])); // THIS SHRINKS THE GRID FOR SOME REASON
+            verts.push(Matrix.multiply([ n , scene.models[i].vertices[j] ]));
         }        
 
         for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
@@ -210,50 +242,27 @@ function drawScene() {
                 let vert0 = verts[idx0];
                 let vert1 = verts[idx1];
                 //console.log("verts:");console.log(vert0);console.log(vert1);
-
-                let testLine = {pt0: vert0, pt1: vert1};
-                //drawLine(testLine);
-
                 
                 
                 // create a line between them to be clipped
                 let tempLine = {pt0: vert0, pt1: vert1};
                 // clip the line based on view type
                 if(sceneType == "perspective") {
-                    var clippedLine = clipLinePerspective(tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
+                    var clippedLine = clipLinePerspective( tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
                 } else {
-                    var clippedLine = clipLineParallel(tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
+                    var clippedLine = clipLineParallel( tempLine );
                 }
+
                 // draw the clipped line
+
+                if (clippedLine != null) { // if line is null it was entirely out of view
+                    var drawPt0 = Matrix.multiply([ window, m, clippedLine.pt0 ]);
+                    var drawPt1 = Matrix.multiply([ window, m, clippedLine.pt1 ]);
+                    
+                    drawLine( ( drawPt0.x ), ( drawPt0.y ), ( drawPt1.x ), ( drawPt1.y ));
+                }
+
                 // TODO: figure out where to use the z-values from the clippedLine coordinates
-                let z0 = clippedLine.pt0.z; 
-                let z1 = clippedLine.pt1.z;
-
-                // after performing projections on the canonical view volume, models have x and y
-                // vertices in range [-1, 1]
-                // must transform them to window/framebuffer units
-                let V = new Matrix(4, 4);
-                mat4x4Identity(V);
-                let width = view.width;
-                let height = view.height;
-                V.values = [[ ( width / 2 ), 0, 0, ( width / 2 )],
-                            [ 0, ( height / 2 ), 0, ( height / 2 )],
-                            [ 0, 0, 1, 0],
-                            [ 0, 0, 0, 1]];
-                console.log("clipped line:"); console.log(clippedLine);
-                let projP0 = Matrix.multiply( V, clippedLine.pt0 );
-                console.log(projP0);
-                let projP1 = Matrix.multiply( V, clippedLine.pt1 );
-                console.log("ProjP1: "); console.log(projP1);
-                let projection;
-                console.log("Projection: "); console.log(projection);
-
-                //drawLine( ( projection.pt0.x ), ( projection.pt0.y ), ( projection.pt1.x ), ( projection.pt1.y ));
-                drawLine( ( clippedLine.pt0.x ), ( clippedLine.pt0.y ), ( clippedLine.pt1.x ), ( clippedLine.pt1.y ));
-                //drawLine(             x1,                             y1,                         x2,                                 y2          );
-
-                
-
             }
         }
     }
@@ -312,12 +321,16 @@ function outcodePerspective(vertex, z_min) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
+    console.log("clipLinePar"); console.log(line);
     let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
-    let t, selectpt, selectout, done = false;
+
+    // left: x = -1, right: x = 1, bottom: y = -1, top: y = 1, far: z = -1, near: z = 0
+
+    let done = false;
 
     // TODO: implement clipping here!
     while(!done) {
@@ -329,69 +342,63 @@ function clipLineParallel(line) {
             done = true;
         } else {
             // TODO: complete 3D line clipping algorithm for parallel
-            // at least one endpoint is outside the view frustum
-            var outcode;
+            var outcode, t, x, y, z = null;
+
             if (out0 != 0) {
-                selectpt = p0;
-                selectout = out0;
+                outcode = out0;
             } else {
-                selectpt = p1;
-                selectout = out1;
+                outcode = out1;
             }
-            /*
-            let x0 = pt0.x;
-            let x1 = pt1.x;
-            let y0 = pt0.y;
-            let y1 = pt1.y;
-            let z0 = pt0.z;
-            let z1 = pt1.z;
+            
+            let x0 = p0.x;
+            let x1 = p1.x;
+            let y0 = p0.y;
+            let y1 = p1.y;
+            let z0 = p0.z;
+            let z1 = p1.z;
             let deltaX = x1-x0;
             let deltaY = y1-y0;
             let deltaZ = z1-z0;
-            let t; */
 
             if ((selectout & LEFT) != 0) { // clip to left edge
-                // t = (view_xmin - x0)/ deltaX
-                t = (0 - p0.x) / (p1.x - p0.x);
-                selectpt.y = p0.y + t * (p1.y - p0.y);
-                selectpt.x = 0;
-                selectpt.z = p0.z + t * (p1.z - p0.z);
+                t = ( 0 - x0 ) / ( deltaX );
+                x = 0;
+                y = y0 + t * ( deltaY );
+                z = z0 + t * ( deltaZ );
 
 
             } else if ((selectout & RIGHT) != 0) { // clip to right edge
-                // t = (view_xmax - x0)/deltaX
-                t = (view.width - p0.x) / (p1.x - p0.x);
-                selectpt.y = p0.y + t * (p1.y - p0.y);
-                selectpt.x = view.width;
-                selectpt.z = p0.z + t * (p1.z - p0.z);
-
+                t = ( view.width - x0 ) / ( deltaX );
+                x = view.width;
+                y = y0 + t * ( deltaY );
+                z = z0 + t * ( deltaZ );
+                
             } else if ((selectout & BOTTOM) != 0) { // clip to bottom edge
-                // t = (view_ymin - y0)/deltaY
-                t = (0 - p0.y) / (p1.y - p0.y);
-                selectpt.x = p0.x + t * (p1.x - p0.x);
-                selectpt.y = 0;
-                selectpt.z = p0.z + t * (p1.z - p0.z);
+                t = ( view.width - x0 ) / ( deltaY );
+                x = x0 + t * ( deltaX);
+                y = 0;
+                z = z0 + t * ( deltaZ );
 
             } else if ((selectout & TOP) != 0) { // clip to top edge
-                // t = (view_ymax - y0)/deltaY
-                t = (view.height - p0.y) / (p1.y - p0.y);
-                selectpt.x = p0.x + t * (p1.x - p0.x);
-                selectpt.y = view.height;
-                selectpt.z = p0.z + t * (p1.z - p0.z);
+                t = ( view.width - x0 ) / ( deltaY );
+                x = x0 + t * ( deltaX);
+                y = view.height;
+                z = z0 + t * ( deltaZ );
                 
-            } else if ((selectout & NEAR) != 0) { // clip to near edge
-                t = (0 - p0.z) / (p1.z - p0.z);
-                selectpt.x = p0.x + t * (p1.x - p0.x);
-                selectpt.y = p0.y + t * (p1.y - p0.y);
-                selectpt.z = 0;
+            } 
+            // else if ((selectout & NEAR) != 0) { // clip to near edge
+            //     t = ( view.width - x0 ) / ( deltaZ );
+            //     x = x0 + t * ( deltaX);
+            //     y = y0 + t * ( deltaY );
+            //     z = z0 + t * ( deltaZ );
                 
-            } else if ((selectout & FAR) != 0) { // clip to far edge
-                t = (-1 - p0.z) / (p1.z - p0.z);
-                selectpt.x = p0.x + t * (p1.x - p0.x);
-                selectpt.y = p0.y + t * (p1.y - p0.y);
-                selectpt.z = -1;
+            // } else if ((selectout & FAR) != 0) { // clip to far edge
+            //     t = ( view.width - x0 ) / ( deltaZ );
+            //     x = x0 + t * ( deltaX);
+            //     y = y0 + t * ( deltaY );
+            //     z = z0 + t * ( deltaZ );
                 
-            }
+            // }
             if (selectout === out0) {
                 out0 = outcodeParallel(selectpt);
             } else {
@@ -427,8 +434,6 @@ function clipLinePerspective(line, z_min) {
 
     let done = false;
     
-    // TODO: complete 3D line clipping algorithm for perspective
-
     while(!done) {
         if(out0 | out1 == 0) {
             result = line; // trivial accept

@@ -1,5 +1,8 @@
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
+
+    // TODO: ZACK - debug / finish parallel projection
+
     //console.log("IN mat4x4Parallel");
     //console.log(prp);
     //console.log(srp);
@@ -19,68 +22,86 @@ function mat4x4Parallel(prp, srp, vup, clip) {
         v: n-axis X u-axis
     */
 
-    let n = prp.subtract(srp);
-    n.normalize();
-    let u = vup.cross(n);
-    u.normalize();
-    let v = n.cross(u);
+    // clip(left, right, bottom, top, near, far)
+    let left = clip[0];
+    let right = clip[1];
+    let bottom = clip[2];
+    let top = clip[3];
+    let near = clip[4];
+    let far = clip[5];
 
-    /*
-    Window calculations
-        center of window: [(left + right) / 2 , (bottom + top) / 2]
-        DOP: CW - PRP
-    */
+    // Window calculations
+    //     center of window: [(left + right) / 2 , (bottom + top) / 2]
+    var cow = new Vector3((left + right) / 2, (bottom + top) / 2, -near);
+    //     DOP: CW - PRP, but prp is 0,0,0 in VRC
+    var dop = cow;
 
 
     // 1. translate PRP to origin
 
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
 
-    let T = Vector4(0, 0, 0, 0);
-    Mat4x4Translate(T, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
+    let neg_prp = new Vector3(-1 * prp.x, -1 * prp.y, -1 * prp.z);
+    let translate = new Matrix(4, 4);
+    mat4x4Identity(translate);
+    Mat4x4Translate(translate, neg_prp.x, neg_prp.y, neg_prp.z);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
+
+    // VRC calculations
+    //    n: normalized (PRP - SRP)
+    //    u: normalized (VUP X n-axis)
+    //    v: n-axis X u-axis
+
+    let n = prp.subtract(srp);
+    n.normalize();
+    let u = vup.cross(n);
+    u.normalize();
+    let v = n.cross(u);
+
     let R = Vector4(0, 0, 0, 0);
-    R.values = [[u[0], u[1], u[2], 0],
-               [v[0], v[1], v[2], 0],
-               [n[0], n[1], n[2], 0],
-               [0, 0, 0, 1]];
+    R.values = [[u.x, u.y, u.z, 0],
+                [v.x, v.y, v.z, 0],
+                [n.x, n.y, n.z, 1],
+                [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
 
     // shxpar = -DOPx / DOPz
-    let shxpar = 0;
+    let shxpar = -1 * dop.x / dop.z;
 
     // shypar = -DOPy / DOPz
-    let shypar = 0;
+    let shypar = -1 * dop.y / dop.z;
 
     // shpar = [1 0 shxpar 0; 0 1 shypar 0; 0 0 1 0; 0 0 0 1]
-    let shpar = Vector4(0, 0, 0, 0);
-    shpar.values = [[1, 0, shxpar, 0],
-                    [0, 1, shypar, 0],
-                    [0, 0, 1, 0],
-                    [0, 0, 0, 1]];
+    let shpar = new Matrix(4, 4);
+    mat4x4Identity(shpar);
+    Mat4x4ShearXY(shpar, shxpar, shypar);
 
     // 4. translate near clipping plane to origin
 
-    // tpar = [1 0 0 0; 0 1 0 0; 0 0 1 near; 0 0 0 1]
+    let Tpar = new Matrix(4, 4);
+    Tpar.value = [[1, 0, 0, 0],
+                  [0, 1, 0, 0],
+                  [0, 0, 1, near],
+                  [0, 0, 0, 1]];
+    
 
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
 
-    // sparx = 2 / (right - left)
-    // spary = 2 / (top - bottom)
-    // sparz = 1 / far
-    // spar = [sparx 0 0 0; 0 spary 0 0; 0 0 sparz; 0; 0 0 0 1]
+    let sperx = 2 / (right - left);
+    let spery = 2 / (top - bottom);
+    let sperz = (1 / far);
+    // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
+
+    let scale = new Matrix(4,4);
+    Mat4x4Scale(scale, sperx, spery, sperz);
 
     // npar = shpar * tpar * shpar * R * T(-PRP)
-    // clip
-    // mpar
 
-    // ...
-    // let transform = Matrix.multiply([...]);
-    //return transform;
+    let transform = Matrix.multiply([scale, Tpar, shpar, R, translate]);
+    return transform;
 }
 
 // create a 4x4 matrix to the perspective projection / view matrix
@@ -110,8 +131,6 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     var cow = new Vector3((left + right) / 2, (bottom + top) / 2, -near);
     //     DOP: CW - PRP, but prp is 0,0,0 in VRC
     var dop = cow;
-
-    let mper = mat4x4MPer();
 
     // 1. translate PRP to origin
     //console.log("STEP 1");
@@ -157,7 +176,6 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
     //console.log("STEP 4");
     let sperx = (2 * near) / ((right - left) * far);
-
     let spery = (2 * near) / ((top - bottom) * far);
     let sperz = (1 / far);
     // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
