@@ -29,6 +29,7 @@ Left/right arrow keys: rotate SRP around the v-axis with the PRP as the origin: 
 
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
+    //console.log("prp: ", prp);
 
     // TODO: ZACK - debug / finish parallel projection
 
@@ -62,6 +63,9 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     // Window calculations
     //     center of window: [(left + right) / 2 , (bottom + top) / 2]
     var cow = new Vector3((left + right) / 2, (bottom + top) / 2, -near);
+    //console.log("cow"); console.log(cow);
+    
+    
     //     DOP: CW - PRP, but prp is 0,0,0 in VRC
     var dop = cow;
 
@@ -71,9 +75,14 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
 
     let neg_prp = new Vector3(-1 * prp.x, -1 * prp.y, -1 * prp.z);
+    //console.log(prp.x, prp.y, prp.z);
+    //console.log("neg_prp"); console.log(neg_prp);
     let translate = new Matrix(4, 4);
+    //console.log("translate"); console.log(translate.values);
     mat4x4Identity(translate);
+    //console.log("translate after identity: ", translate, translate.values);
     Mat4x4Translate(translate, neg_prp.x, neg_prp.y, neg_prp.z);
+    //console.log("translate after translate: ", translate, translate.values);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
@@ -84,12 +93,15 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     //    v: n-axis X u-axis
 
     let n = prp.subtract(srp);
+    //console.log("n= ", n , n.values);
     n.normalize();
+    //console.log("AFTER NORMALIZED n= ", n , n.values);
     let u = vup.cross(n);
     u.normalize();
     let v = n.cross(u);
 
-    let R = Vector4(0, 0, 0, 0);
+    //let R = Vector4(0, 0, 0, 0); 
+    let R = new Matrix(4,4);
     R.values = [[u.x, u.y, u.z, 0],
                 [v.x, v.y, v.z, 0],
                 [n.x, n.y, n.z, 1],
@@ -111,25 +123,37 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     // 4. translate near clipping plane to origin
 
     let Tpar = new Matrix(4, 4);
-    Tpar.value = [[1, 0, 0, 0],
+    console.log("Tpar", Tpar, Tpar.values);
+    console.log("near", near);
+    Tpar.values = [[1, 0, 0, 0],
                   [0, 1, 0, 0],
                   [0, 0, 1, near],
                   [0, 0, 0, 1]];
     
-
+    console.log("AFTER VALUES ARE SET: Tpar", Tpar, Tpar.values);
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
 
     let sperx = 2 / (right - left);
+    console.log("sperx", sperx);
     let spery = 2 / (top - bottom);
+    console.log("spery", spery);
     let sperz = (1 / far);
+    console.log("sperz", sperz);
     // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
 
     let scale = new Matrix(4,4);
+
+    //TODO: This is undefined
+    console.log("scale", scale, scale.values);
     Mat4x4Scale(scale, sperx, spery, sperz);
+    console.log("AFTER Mat4x4Scale: scale", scale, scale.values);
+
+    //console.log("Matrix4x4Scale "); console.log(Mat4x4Scale(scale, sperx, spery, sperz));
 
     // npar = shpar * tpar * shpar * R * T(-PRP)
-
+    console.log("BEFORE Transform");
     let transform = Matrix.multiply([scale, Tpar, shpar, R, translate]);
+    console.log("AFTER Transform");
     return transform;
 }
 

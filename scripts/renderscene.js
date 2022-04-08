@@ -201,7 +201,18 @@ function drawScene() {
         console.log("PARALLEL");
 
         m = mat4x4MPar();
+        /*
+        console.log("prp"); console.log(prp);
+        console.log("srp"); console.log(srp);
+        console.log("vup"); console.log(vup);
+        console.log("clip"); console.log(clip);
+        */
         n = mat4x4Parallel(prp, srp, vup, clip);
+        if(n != null){
+            console.log("n HAS VALUES: ", n, n.values);
+        } else{
+            console.log("n is NULL IGNORE EVERYTHING BELOW ME 4 NOW");
+        }
 
         // general parallel projection: Npar = Spar * Tpar * SHpar * R * T(-PRP)    (09 - 3D Projections Part 2 slide 15)
     }
@@ -250,6 +261,8 @@ function drawScene() {
                 if(sceneType == "perspective") {
                     var clippedLine = clipLinePerspective( tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
                 } else {
+                    console.log("tempLine is: ")
+                    console.log(tempLine);
                     var clippedLine = clipLineParallel( tempLine );
                 }
 
@@ -323,7 +336,14 @@ function outcodePerspective(vertex, z_min) {
 function clipLineParallel(line) {
     console.log("clipLinePar"); console.log(line);
     let result = null;
-    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
+    console.log(line);
+    console.log(line.pt0);
+    console.log(line.pt0.x);
+    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
+
+    
+    
+
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
