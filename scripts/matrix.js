@@ -63,6 +63,7 @@ class Matrix {
         else {
             console.log("could not multiply - row/column mismatch");
         }
+        console.log("this: ", this, "rhs", rhs);
         return result;
     }
 

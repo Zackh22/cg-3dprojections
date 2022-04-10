@@ -208,11 +208,6 @@ function drawScene() {
         console.log("clip"); console.log(clip);
         */
         n = mat4x4Parallel(prp, srp, vup, clip);
-        if(n != null){
-            console.log("n HAS VALUES: ", n, n.values);
-        } else{
-            console.log("n is NULL IGNORE EVERYTHING BELOW ME 4 NOW");
-        }
 
         // general parallel projection: Npar = Spar * Tpar * SHpar * R * T(-PRP)    (09 - 3D Projections Part 2 slide 15)
     }
@@ -242,7 +237,7 @@ function drawScene() {
             //console.log(" edge array idx: "); console.log(j);
             //console.log("edge array: "); console.log(scene.models[i].edges[j]);
             for(let k = 1; k < scene.models[i].edges[j].length; k++) { // loop through vertex indices
-
+                console.log(j, k);
 
                 //console.log(" k value: "); console.log(scene.models[i].edges[j][k]);
                 // assign two vertex indices
@@ -261,21 +256,22 @@ function drawScene() {
                 if(sceneType == "perspective") {
                     var clippedLine = clipLinePerspective( tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
                 } else {
-                    console.log("tempLine is: ")
-                    console.log(tempLine);
                     var clippedLine = clipLineParallel( tempLine );
                 }
 
                 // draw the clipped line
 
                 if (clippedLine != null) { // if line is null it was entirely out of view
+                    console.log("********** TRYING TO DRAW LINE **********");
                     var drawPt0 = Matrix.multiply([ window, m, clippedLine.pt0 ]);
+                    console.log("***** PT0 calc done");
+                    console.log("window:",window,"m:",m,"clippedLine.pt0:",clippedLine.pt0);
                     var drawPt1 = Matrix.multiply([ window, m, clippedLine.pt1 ]);
-                    
+                    console.log("***** PT1 calc done");
+                    console.log("window:",window,"m:",m,"clippedLine.pt1:",clippedLine.pt1);
+
                     drawLine( ( drawPt0.x ), ( drawPt0.y ), ( drawPt1.x ), ( drawPt1.y ));
                 }
-
-                // TODO: figure out where to use the z-values from the clippedLine coordinates
             }
         }
     }
@@ -334,11 +330,8 @@ function outcodePerspective(vertex, z_min) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
-    console.log("clipLinePar", line, line.pt0, line.pt0.values);
+    console.log("clipLinePar", line, line.pt0, line.pt0.values);    
     let result = null;
-    console.log(line);
-    console.log(line.pt0);
-    console.log(line.pt0.x);
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);    
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
@@ -350,18 +343,8 @@ function clipLineParallel(line) {
 
     // TODO: implement clipping here!
     let cyclesInLoop = 0;
-    let newPt = null;
-    let originalP0 = p0;
-    let originalP1 = p1;
 
-
-    while(!done) {
-        console.log("START LOOP");
-        console.log("Current p0: ", p0.values);
-        console.log("Current p1: ", p1.values);
-        console.log(out0, out1);
-        console.log("BitwiseOR", out0 | out1);
-        console.log("BitwiseAND", out0 & out1);
+    while(done != true) {
         if(cyclesInLoop == 10){
             console.log("Looped through", cyclesInLoop, "times");
             break;
@@ -371,13 +354,14 @@ function clipLineParallel(line) {
             result = line;//{pt0: p0, pt1: p1}; // if both outcodes are zero the line is completely inside
             done = true;
             console.log("Total Cyles in loop:", cyclesInLoop);
+            break;
         } else if(out0 & out1 != 0) { // trival reject
             result = null; // if the result of a bitwise and of the outcodes is not zero, the line is completely outside
             done = true;
             console.log("Trivial Reject");
+            break;
         } else {
             // TODO: complete 3D line clipping algorithm for parallel
-            console.log("In ELSE");
             var outcode, t, x, y, z = null;
 
             if (out0 != 0) {
@@ -398,39 +382,39 @@ function clipLineParallel(line) {
 
             if ((outcode & LEFT) != 0) { // clip to left edge
                 t = ( 0 - x0 ) / ( deltaX );
-                x = 0;
+                x = -1;
                 y = y0 + t * ( deltaY );
                 z = z0 + t * ( deltaZ );
 
 
             } else if ((outcode & RIGHT) != 0) { // clip to right edge
                 t = ( view.width - x0 ) / ( deltaX );
-                x = view.width;
+                x = 1;
                 y = y0 + t * ( deltaY );
                 z = z0 + t * ( deltaZ );
                 
             } else if ((outcode & BOTTOM) != 0) { // clip to bottom edge
-                t = ( view.width - x0 ) / ( deltaY );
+                t = ( 0 - y0 ) / ( deltaY );
                 x = x0 + t * ( deltaX);
-                y = 0;
+                y = -1;
                 z = z0 + t * ( deltaZ );
 
             } else if ((outcode & TOP) != 0) { // clip to top edge
-                t = ( view.width - x0 ) / ( deltaY );
+                t = ( view.height - y0 ) / ( deltaY );
                 x = x0 + t * ( deltaX);
-                y = view.height;
+                y = 1;
                 z = z0 + t * ( deltaZ );
             //TODO: Find out if these two edges need to come back in.  
             } else if ((outcode & NEAR) != 0) { // clip to near edge
-                t = ( view.width - x0 ) / ( deltaZ );
+                t = ( 0 - z0 ) / ( deltaZ );
                 x = x0 + t * ( deltaX);
                 y = y0 + t * ( deltaY );
-                z = z0 + t * ( deltaZ );
+                z = 0;
             } else if ((outcode & FAR) != 0) { // clip to far edge
-                t = ( view.width - x0 ) / ( deltaZ );
+                t = ( -1 - z0 ) / ( deltaZ );
                 x = x0 + t * ( deltaX);
                 y = y0 + t * ( deltaY );
-                z = z0 + t * ( deltaZ );
+                z = -1;
             }
 
             // else if ((selectout & NEAR) != 0) { // clip to near edge
@@ -456,7 +440,7 @@ function clipLineParallel(line) {
             //TODO: why would you change out0 if outcode and out0 are the same?
             //console.log("OUTCODE", outcode, "out0", out0, "out1", out1);
             //if (outcode === out0) {
-            if(outcode == out0){
+            if(outcode === out0){
                 //out0 = outcodeParallel(selectpt);
                 p0.x = x;
                 p0.y = y;
@@ -517,11 +501,11 @@ function clipLinePerspective(line, z_min) {
         if(out0 | out1 == 0) {
             result = line; // trivial accept
             done = true;
-            //break;
+            break;
         } else if(out0 & out1 != 0) {
             result = null; // trivial reject
             done = true;
-            //break;
+            break;
         } else {
             // at least one endpoint is outside the view frustum
             var outcode, t, x , y, z = null;
