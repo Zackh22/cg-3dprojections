@@ -346,7 +346,7 @@ function clipLineParallel(line) {
 
     while(done != true) {
         if(cyclesInLoop == 10){
-            console.log("Looped through", cyclesInLoop, "times");
+            console.log("Looped through", cyclesInLoop, "times"); //This is for testing purposes only because we sometimes get stuck in an infinite loop
             break;
         }
         if(out0 | out1 == 0) { // trivial accept
