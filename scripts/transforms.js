@@ -99,8 +99,7 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     let u = vup.cross(n);
     u.normalize();
     let v = n.cross(u);
-
-    //let R = Vector4(0, 0, 0, 0); 
+ 
     let R = new Matrix(4,4);
     R.values = [[u.x, u.y, u.z, 0],
                 [v.x, v.y, v.z, 0],
@@ -123,37 +122,36 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     // 4. translate near clipping plane to origin
 
     let Tpar = new Matrix(4, 4);
-    console.log("Tpar", Tpar, Tpar.values);
-    console.log("near", near);
+    //console.log("Tpar", Tpar, Tpar.values);
+    //console.log("near", near);
     Tpar.values = [[1, 0, 0, 0],
                   [0, 1, 0, 0],
                   [0, 0, 1, near],
                   [0, 0, 0, 1]];
     
-    console.log("AFTER VALUES ARE SET: Tpar", Tpar, Tpar.values);
+    //console.log("AFTER VALUES ARE SET: Tpar", Tpar, Tpar.values);
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
 
     let sperx = 2 / (right - left);
-    console.log("sperx", sperx);
+    //console.log("sperx", sperx);
     let spery = 2 / (top - bottom);
-    console.log("spery", spery);
+    //console.log("spery", spery);
     let sperz = (1 / far);
-    console.log("sperz", sperz);
+    //console.log("sperz", sperz);
     // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
 
     let scale = new Matrix(4,4);
 
-    //TODO: This is undefined
-    console.log("scale", scale, scale.values);
+    //console.log("scale", scale, scale.values);
     Mat4x4Scale(scale, sperx, spery, sperz);
-    console.log("AFTER Mat4x4Scale: scale", scale, scale.values);
+    //console.log("AFTER Mat4x4Scale: scale", scale, scale.values);
 
     //console.log("Matrix4x4Scale "); console.log(Mat4x4Scale(scale, sperx, spery, sperz));
 
     // npar = shpar * tpar * shpar * R * T(-PRP)
-    console.log("BEFORE Transform");
+    //console.log("BEFORE Transform");
     let transform = Matrix.multiply([scale, Tpar, shpar, R, translate]);
-    console.log("AFTER Transform");
+    //console.log("AFTER Transform");
     return transform;
 }
 

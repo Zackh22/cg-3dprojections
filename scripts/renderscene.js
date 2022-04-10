@@ -334,16 +334,12 @@ function outcodePerspective(vertex, z_min) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
-    console.log("clipLinePar"); console.log(line);
+    console.log("clipLinePar", line, line.pt0, line.pt0.values);
     let result = null;
     console.log(line);
     console.log(line.pt0);
     console.log(line.pt0.x);
-    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);
-
-    
-    
-
+    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);    
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
@@ -353,15 +349,35 @@ function clipLineParallel(line) {
     let done = false;
 
     // TODO: implement clipping here!
+    let cyclesInLoop = 0;
+    let newPt = null;
+    let originalP0 = p0;
+    let originalP1 = p1;
+
+
     while(!done) {
-        if(out0 | out1 === 0) { // trivial accept
-            result = {pt0: p0, pt1: p1}; // if both outcodes are zero the line is completely inside
+        console.log("START LOOP");
+        console.log("Current p0: ", p0.values);
+        console.log("Current p1: ", p1.values);
+        console.log(out0, out1);
+        console.log("BitwiseOR", out0 | out1);
+        console.log("BitwiseAND", out0 & out1);
+        if(cyclesInLoop == 10){
+            console.log("Looped through", cyclesInLoop, "times");
+            break;
+        }
+        if(out0 | out1 == 0) { // trivial accept
+            console.log("Trivial Accept.");
+            result = line;//{pt0: p0, pt1: p1}; // if both outcodes are zero the line is completely inside
             done = true;
+            console.log("Total Cyles in loop:", cyclesInLoop);
         } else if(out0 & out1 != 0) { // trival reject
             result = null; // if the result of a bitwise and of the outcodes is not zero, the line is completely outside
             done = true;
+            console.log("Trivial Reject");
         } else {
             // TODO: complete 3D line clipping algorithm for parallel
+            console.log("In ELSE");
             var outcode, t, x, y, z = null;
 
             if (out0 != 0) {
@@ -380,32 +396,43 @@ function clipLineParallel(line) {
             let deltaY = y1-y0;
             let deltaZ = z1-z0;
 
-            if ((selectout & LEFT) != 0) { // clip to left edge
+            if ((outcode & LEFT) != 0) { // clip to left edge
                 t = ( 0 - x0 ) / ( deltaX );
                 x = 0;
                 y = y0 + t * ( deltaY );
                 z = z0 + t * ( deltaZ );
 
 
-            } else if ((selectout & RIGHT) != 0) { // clip to right edge
+            } else if ((outcode & RIGHT) != 0) { // clip to right edge
                 t = ( view.width - x0 ) / ( deltaX );
                 x = view.width;
                 y = y0 + t * ( deltaY );
                 z = z0 + t * ( deltaZ );
                 
-            } else if ((selectout & BOTTOM) != 0) { // clip to bottom edge
+            } else if ((outcode & BOTTOM) != 0) { // clip to bottom edge
                 t = ( view.width - x0 ) / ( deltaY );
                 x = x0 + t * ( deltaX);
                 y = 0;
                 z = z0 + t * ( deltaZ );
 
-            } else if ((selectout & TOP) != 0) { // clip to top edge
+            } else if ((outcode & TOP) != 0) { // clip to top edge
                 t = ( view.width - x0 ) / ( deltaY );
                 x = x0 + t * ( deltaX);
                 y = view.height;
                 z = z0 + t * ( deltaZ );
-                
-            } 
+            //TODO: Find out if these two edges need to come back in.  
+            } else if ((outcode & NEAR) != 0) { // clip to near edge
+                t = ( view.width - x0 ) / ( deltaZ );
+                x = x0 + t * ( deltaX);
+                y = y0 + t * ( deltaY );
+                z = z0 + t * ( deltaZ );
+            } else if ((outcode & FAR) != 0) { // clip to far edge
+                t = ( view.width - x0 ) / ( deltaZ );
+                x = x0 + t * ( deltaX);
+                y = y0 + t * ( deltaY );
+                z = z0 + t * ( deltaZ );
+            }
+
             // else if ((selectout & NEAR) != 0) { // clip to near edge
             //     t = ( view.width - x0 ) / ( deltaZ );
             //     x = x0 + t * ( deltaX);
@@ -419,11 +446,42 @@ function clipLineParallel(line) {
             //     z = z0 + t * ( deltaZ );
                 
             // }
-            if (selectout === out0) {
-                out0 = outcodeParallel(selectpt);
+            //if (selectout === out0) {
+            //newPt = Vector3(x, y, z);
+            //console.log("p0", p0, p0.values);
+            //console.log("p1", p1, p1.values);
+            //console.log("newPt", newPt, newPt.values);
+            
+            
+            //TODO: why would you change out0 if outcode and out0 are the same?
+            //console.log("OUTCODE", outcode, "out0", out0, "out1", out1);
+            //if (outcode === out0) {
+            if(outcode == out0){
+                //out0 = outcodeParallel(selectpt);
+                p0.x = x;
+                p0.y = y;
+                p0.z = z;
+                out0 = outcodeParallel(p0);
+                //out0 = outcodeParallel(newPt);
+                //console.log("out0", out0, "and p0 changed to newPt");
+                
+                //p0 = newPt;
+                
+                //console.log(p0.values);
             } else {
-                out1 = outcodeParallel(selectpt);
+                //out1 = outcodeParallel(selectpt);
+                //out1 = outcodeParallel(newPt);
+                p1.x = x;
+                p1.y = y;
+                p1.z = z;
+                out1 = outcodeParallel(p1);
+                
+                //p1 = newPt;
+                
+                //console.log("out1", out1, "and pt1 changed to newPt");
             }
+            cyclesInLoop++;
+            console.log("END OF LOOP");
 
             // use parametric line equations to compute intersections
             // test for planes x = 1, x = -1, y = 1, y = -1, z = 0, z = -1
@@ -434,11 +492,12 @@ function clipLineParallel(line) {
             z(t) = z0 + t(z1 - z0)
             */
 
-            
+            line.pt0 = p0;
+            line.pt1 = p1;
+            result = line;
 
         }
     }
-    
     return result;
 }
 
@@ -458,11 +517,11 @@ function clipLinePerspective(line, z_min) {
         if(out0 | out1 == 0) {
             result = line; // trivial accept
             done = true;
-            break;
+            //break;
         } else if(out0 & out1 != 0) {
             result = null; // trivial reject
             done = true;
-            break;
+            //break;
         } else {
             // at least one endpoint is outside the view frustum
             var outcode, t, x , y, z = null;
@@ -514,18 +573,19 @@ function clipLinePerspective(line, z_min) {
             y = (( 1 - t ) * p0.y ) + ( t * p1.y );
             z = (( 1 - t ) * p0.z ) + ( t * p1.z );
 
-            if (outcode === out0) {
+            if (outcode === out0) { // if the point being clipped is p0, the selected outcode was out0
 
                 p0.x = x;
                 p0.y = y;
                 p0.z = z;
                 out0 = outcodePerspective(p0, z_min);
 
-            } else {
+            } else { // otherwise the pt being clipped is p1 and the selected outcode was out1
 
                 p1.x = x;
                 p1.y = y;
                 p1.z = z;
+                out1 = outcodePerspective(p1, z_min);
                 
             }
 
