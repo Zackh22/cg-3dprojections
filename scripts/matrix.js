@@ -80,6 +80,7 @@ class Matrix {
 }
 
 Matrix.multiply = function(matrices) {
+    console.log(matrices);
     var i;
     var result = null;
     // ensure at least 2 matrices

@@ -3,48 +3,47 @@
 3D Projections (to earn a C: 45 pts)
 
 Implement perspective projection for 3D models: 35 pts DONE
-    Transform models into canonical view volume - DONE (Patrick)
-        Implement the matrix functions in transforms.js - DONE (Patrick)
-    Implement Cohen-Sutherland 3D line clipping - TODO: debug (Patrick and Zack)
-    Project onto view plane - DONE (Patrick)
-    Draw 2D lines - DONE (Patrick)
+    Transform models into canonical view volume - DONE (Patrick 100%)
+        Implement the matrix functions in transforms.js - DONE (Patrick 100%)
+    Implement Cohen-Sutherland 3D line clipping - DONE (Patrick 90% and Zack 10%)
+    Project onto view plane - DONE (Patrick 100%)
+    Draw 2D lines - DONE (Patrick 60% and Zack 40%)
 Implement camera movement to change the view of a scene: 10 pts
-    A/D keys: translate the PRP and SRP along the u-axis TODO: debug/improve (Patrick)
-    W/S keys: translate the PRP and SRP along the n-axis TODO: debug/improve (Patrick)
+    A/D keys: translate the PRP and SRP along the u-axis - DONE (Patrick 100%)
+    W/S keys: translate the PRP and SRP along the n-axis - DONE (Patrick 100%)
 
 Additional features (to earn a B or A)
 
 Implement parallel projection for 3D models: 5 pts 
-    Follows same steps as perspective TODO: debug (Zack and Patrick)
+Follows same steps as perspective TODO: debug (Patrick and Zack)
+    Transform models into canonical view volume - DONE (Patrick 100%)
+    Implement Cohen-Sutherland 3D line clipping - DONE (Patrick 60% and Zack 40%)
+    Project onto view plane - DONE (Patrick 100%)
+    Draw 2D lines - DONE (Zack 100%)
 Generate vertices and edges for common models: 5 pts
-    Cube: defined by center point, width, height, and depth (1 pt) TODO: finish rotation and draw (Patrick)
-    Cone: defined by center point of base, radius, height, and number of sides (1 pt) TODO: entire function
-    Cylinder: defined by center point, radius, height, and number of sides (1 pt) TODO: entire function
-    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) TODO: entire function
+    Cube: defined by center point, width, height, and depth (1 pt) (Patrick) TODO: finish and test feature
+    Cone: defined by center point of base, radius, height, and number of sides (1 pt) (Patrick) TODO: finish and test feature
+    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick) TODO: finish and test feature
+    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) () TODO: entire feature
 Allow for models to have a rotation animation: 5 pts
-    Can be about the x, y, or z axis TODO: entire feature
-    Defined in terms of revolutions per second TODO: entire feature
-Left/right arrow keys: rotate SRP around the v-axis with the PRP as the origin: 5 pts TODO: entire feature
+    Can be about the x, y, or z axis () TODO: entire feature
+    Defined in terms of revolutions per second () TODO: entire feature
+Left/right arrow keys: rotate SRP around the v-axis with the PRP as the origin: 5 pts () TODO: entire feature
 
 */
 
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
     // TODO: ZACK - debug / finish parallel projection
-
     /*
     PRP - projection reference point - used to calculate DOP
     SRP - scene reference point - center of scene
     VUP - view up vector
-    */
-
-    /*
     VRC calculations
         n: normalized (PRP - SRP)
         u: normalized (VUP X n-axis)
         v: n-axis X u-axis
     */
-
     // clip(left, right, bottom, top, near, far)
     let left = clip[0];
     let right = clip[1];
@@ -52,94 +51,54 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     let top = clip[3];
     let near = clip[4];
     let far = clip[5];
-
     // Window calculations
     //     center of window: [(left + right) / 2 , (bottom + top) / 2]
-    var cow = new Vector3((left + right) / 2, (bottom + top) / 2, -near);
-    //console.log("cow"); console.log(cow);
-    
-    
+    var cow = new Vector3((left + right) / 2, (bottom + top) / 2, -near);    
     //     DOP: CW - PRP, but prp is 0,0,0 in VRC
     var dop = cow;
-
-
     // 1. translate PRP to origin
-
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
-
     let neg_prp = new Vector3(-1 * prp.x, -1 * prp.y, -1 * prp.z);
-    //console.log(prp.x, prp.y, prp.z);
-    //console.log("neg_prp"); console.log(neg_prp);
     let translate = new Matrix(4, 4);
-    //console.log("translate"); console.log(translate.values);
     mat4x4Identity(translate);
-    //console.log("translate after identity: ", translate, translate.values);
     Mat4x4Translate(translate, neg_prp.x, neg_prp.y, neg_prp.z);
-    //console.log("translate after translate: ", translate, translate.values);
-
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
-
     // VRC calculations
     //    n: normalized (PRP - SRP)
     //    u: normalized (VUP X n-axis)
     //    v: n-axis X u-axis
-
     let n = prp.subtract(srp);
-    //console.log("n= ", n , n.values);
     n.normalize();
-    //console.log("AFTER NORMALIZED n= ", n , n.values);
     let u = vup.cross(n);
     u.normalize();
     let v = n.cross(u);
- 
     let R = new Matrix(4,4);
     R.values = [[u.x, u.y, u.z, 0],
                 [v.x, v.y, v.z, 0],
                 [n.x, n.y, n.z, 1],
                 [0, 0, 0, 1]];
-
     // 3. shear such that CW is on the z-axis
-
     // shxpar = -DOPx / DOPz
     let shxpar = -1 * dop.x / dop.z;
-
     // shypar = -DOPy / DOPz
     let shypar = -1 * dop.y / dop.z;
-
     // shpar = [1 0 shxpar 0; 0 1 shypar 0; 0 0 1 0; 0 0 0 1]
     let shpar = new Matrix(4, 4);
     mat4x4Identity(shpar);
     Mat4x4ShearXY(shpar, shxpar, shypar);
-
     // 4. translate near clipping plane to origin
-
     let Tpar = new Matrix(4, 4);
-    //console.log("Tpar", Tpar, Tpar.values);
-    //console.log("near", near);
     Tpar.values = [[1, 0, 0, 0],
                   [0, 1, 0, 0],
                   [0, 0, 1, near],
                   [0, 0, 0, 1]];
-    
-    //console.log("AFTER VALUES ARE SET: Tpar", Tpar, Tpar.values);
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
-
     let sperx = 2 / (right - left);
-    //console.log("sperx", sperx);
     let spery = 2 / (top - bottom);
-    //console.log("spery", spery);
     let sperz = (1 / far);
-    //console.log("sperz", sperz);
-    // sper = [sperx 0 0 0; 0 spery 0 0; 0 0 sperz 0; 0 0 0 1]
-
     let scale = new Matrix(4,4);
-
-    //console.log("scale", scale, scale.values);
     Mat4x4Scale(scale, sperx, spery, sperz);
-    //console.log("AFTER Mat4x4Scale: scale", scale, scale.values);
-
-    //console.log("Matrix4x4Scale "); console.log(Mat4x4Scale(scale, sperx, spery, sperz));
 
     // npar = shpar * tpar * shpar * R * T(-PRP)
     //console.log("BEFORE Transform");

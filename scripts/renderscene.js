@@ -134,6 +134,7 @@ function animate(timestamp) {
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
     // clear previous frame
+    console.clear();
     ctx.clearRect(0, 0, view.width, view.height);
     /*
     console.log(scene); // print the scene
@@ -213,7 +214,7 @@ function drawScene() {
                 // assign two vertices using the indices
                 let vert0 = verts[idx0];
                 let vert1 = verts[idx1];
-                
+
                 // create a line between them to be clipped
                 //let tempLine = {pt0: vert0, pt1: vert1};
                 // vert0 = Vector4(verts[idx0].x, verts[idx0].y, verts[idx0].z, 1);
@@ -222,7 +223,8 @@ function drawScene() {
 
                 // clip the line based on view type
                 if(sceneType == "perspective") {
-                    var clippedLine = clipLinePerspective( tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
+                    let z_min = -scene.view.clip[4] / scene.view.clip[5];
+                    var clippedLine = clipLinePerspective( tempLine, z_min );
                 } else {
                     var clippedLine = clipLineParallel( tempLine );
                 }
@@ -232,14 +234,8 @@ function drawScene() {
                 if (clippedLine != null) { // if line is null it was entirely out of view
                     // transform the clipped lines using the w-values
                     
-                    point0 = new Vector4(clippedLine.pt0.x, clippedLine.pt0.y, clippedLine.pt0.z, vert0.w);
-                    point1 = new Vector4(clippedLine.pt1.x, clippedLine.pt1.y, clippedLine.pt1.z, vert1.w);
-
-                    // convert points from orthographic to cartesian by dividing by w
-                    point0.data[0] = (point0.data[0] / point0.data[3]);
-                    point0.data[1] = (point0.data[1] / point0.data[3]);
-                    point1.data[0] = (point1.data[0] / point1.data[3]);
-                    point1.data[1] = (point1.data[1] / point1.data[3]);
+                    // point0 = new Vector4(clippedLine.pt0.x, clippedLine.pt0.y, clippedLine.pt0.z, vert0.w);
+                    // point1 = new Vector4(clippedLine.pt1.x, clippedLine.pt1.y, clippedLine.pt1.z, vert1.w);
 
                     var drawPt0 = Matrix.multiply([ window, m, clippedLine.pt0 ]);
                     var drawPt1 = Matrix.multiply([ window, m, clippedLine.pt1 ]);
@@ -320,7 +316,7 @@ function clipLineParallel(line) {
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
 
-    if(out0 | out1 == 0) return line;
+    if((out0 | out1) == 0) return line;
 
     // left: x = -1, right: x = 1, bottom: y = -1, top: y = 1, far: z = -1, near: z = 0
 
@@ -407,19 +403,19 @@ function clipLinePerspective(line, z_min) {
     //console.log("clipLinePer");
     //console.log(line);
     let result = null;
-    let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z); 
-    let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+    let p0 = Vector4(line.pt0.x, line.pt0.y, line.pt0.z, 1); 
+    let p1 = Vector4(line.pt1.x, line.pt1.y, line.pt1.z, 1);
     let out0 = outcodePerspective(p0, z_min);
     let out1 = outcodePerspective(p1, z_min);
 
     let done = false;
     
     while(!done) {
-        if(out0 | out1 == 0) {
+        if((out0 | out1) == 0) {
             result = line; // trivial accept
             done = true;
             break;
-        } else if(out0 & out1 != 0) {
+        } else if((out0 & out1) != 0) {
             result = null; // trivial reject
             done = true;
             break;
@@ -445,29 +441,17 @@ function clipLinePerspective(line, z_min) {
             let delZ = z1 - z0;
 
             if ((outcode & LEFT) != 0) { // clip to left edge
-
                 t = (( -x0 + z0 ) / ( delX - delZ ));
-
             } else if ((outcode & RIGHT) != 0) { // clip to right edge
-
                 t = (( x0 + z0 ) / ( -delX - delZ));
-
             } else if ((outcode & BOTTOM) != 0) { // clip to bottom edge
-
                 t = (( -y0 + z0 ) / ( delY - delZ ));
-
             } else if ((outcode & TOP) != 0) { // clip to top edge
-
                 t = (( y0 + z0 ) / ( -delY - delZ ));
-                
             } else if ((outcode & NEAR) != 0) { // clip to near edge
-
                 t = (( z0 - z_min ) / ( -delZ ));
-                
             } else if ((outcode & FAR) != 0) { // clip to far edge
-
                 t = (( -z0 - 1 ) / ( delZ ));
-
             }
 
             x = (( 1 - t ) * p0.x ) + ( t * p1.x );
@@ -707,7 +691,6 @@ function drawCube(center, width, height, depth, currentTheta, axis) {
     vertices.push(Vector4( x - ( width / 2 ), y - ( height / 2 ) , z + (depth / 2 ), 1 )); // 0 0 1
     vertices.push(Vector4( x - ( width / 2 ), y - ( height / 2 ) , z - (depth / 2 ), 1 )); // 0 0 0
 
-    // draw lines between vertices
     edges.push([0, 2, 3, 1, 0]);
     edges.push([4, 6, 7, 5, 4]);
     edges.push([0, 4]);
@@ -715,19 +698,66 @@ function drawCube(center, width, height, depth, currentTheta, axis) {
     edges.push([2, 6]);
     edges.push([3, 7]);
 
-    // how do we take into account rotation?
 
     // draw cube
 }
 
-function drawCone(center, radius, height, sides, currentTheta, axis) {
+function drawCone(center, radius, height, sides) {
+    let vertices = [];
+    let edges = [];
+    let theta = 0;
+    let incrementAngle = 2 * Math.PI / sides;
+    let xCenter = center[0];
+    let yCenter = center[1];
+    let zCenter = center[2];
+    let currentPt = {x: xCenter, y: yCenter, z: zCenter}; // start at the center of the cone
+    let nextPt = {x: 0, z: 0};
 
+    for (let i = 0; i < sides; i++) {
+        theta += incrementAngle;
+        nextPt.x = xCenter + radius * Math.cos(theta);
+        nextPt.z = zCenter + radius * Math.sin(theta);
+        currentPt = {x: nextPt.x, z: nextPt.z};
+        vertices[i] = Vector4(currentPt.x, yCenter, currentPt.z, 1);
+        edges[0][i] = i;
+        edges[i + 1] = [edges[0][i], sides];
+    }
+    vertices[sides] = Vector4(xCenter, yCenter + height, zCenter, 1);
+    edges[0][sides] = 0;
+    // TODO: return vertices to be drawn
 }
 
-function drawCylinder(center, radius, height, sides, currentTheta, axis) {
+function drawCylinder(center, radius, height, sides) {
+    let vertices = [];
+    let edges = [[0, 0], [0, 0]];
+    let theta = 0;
+    let xCenter = center[0];
+    let yCenter = center[1];
+    let zCenter = center[2];
+    let incrementAngle = 2 * Math.PI / sides;
+    let currentPt = {x: xCenter, y: yCenter, z: zCenter}; // start at the center of the cylinder
+    let nextPt = {x: 0, z: 0};
 
+    for(let i = 0; i < sides; i++) {
+        theta += incrementAngle;
+        nextPt.x = xCenter + radius * Math.cos(theta);
+        nextPt.z = zCenter + radius * Math.sin(theta);
+        currentPt = {x: nextPt.x, z: nextPt.z};
+        vertices[i] = Vector4(currentPt.x, yCenter - ( height / 2), currentPt.z, 1);
+        edges[0][i] = i;
+        edges[1][i] = sides + i;
+        edges[i + 2] = [edges[0][i], edges[1][i]];
+    }
+    edges[0][sides] = 0;
+    edges[1][sides] = sides;
+    // TODO: return vertices to be drawn
 }
 
-function drawSphere(center, radius, slices, stacks, currentTheta, axis) {
-    
+function drawSphere(center, radius, slices, stacks) {
+    let vertices = [];
+    let edges = [];
+    let x = center[0];
+    let y = center[1];
+    let z = center[2];
+    // TODO: finish this function
 }
