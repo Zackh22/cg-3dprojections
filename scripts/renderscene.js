@@ -69,7 +69,7 @@ function init() {
             // clip: [-16, 16, -15, 17, 18, 100]
 
             // side view - modified
-            type: 'perspective',
+            type: 'parallel',
             prp: Vector3(0, 0, 0),
             srp: Vector3(20, 10, -45),
             vup: Vector3(0, 1, 0),
@@ -224,7 +224,6 @@ function drawScene() {
                 let vert1 = verts[idx1];
                 //console.log("verts: ", vert0, vert1);
                 
-                
                 // create a line between them to be clipped
                 //let tempLine = {pt0: vert0, pt1: vert1};
                 // vert0 = Vector4(verts[idx0].x, verts[idx0].y, verts[idx0].z, 1);
@@ -253,11 +252,15 @@ function drawScene() {
 
                     console.log("********** TRYING TO DRAW LINE **********");
                     var drawPt0 = Matrix.multiply([ window, m, clippedLine.pt0 ]);
-                    console.log("***** PT0 calc done");
-                    console.log("window:",window,"m:",m,"clippedLine.pt0:",clippedLine.pt0);
+                    // console.log("***** PT0 calc done");
+                    // console.log("window:",window,"m:",m,"clippedLine.pt0:",clippedLine.pt0);
                     var drawPt1 = Matrix.multiply([ window, m, clippedLine.pt1 ]);
-                    console.log("***** PT1 calc done");
-                    console.log("window:",window,"m:",m,"clippedLine.pt1:",clippedLine.pt1);
+                    // console.log("***** PT1 calc done");
+                    // console.log("window:",window,"m:",m,"clippedLine.pt1:",clippedLine.pt1);
+                    drawPt0.x = drawPt0.x / drawPt0.w;
+                    drawPt0.y = drawPt0.y / drawPt0.w;
+                    drawPt1.x = drawPt1.x / drawPt1.w;
+                    drawPt1.y = drawPt1.y / drawPt1.w;
 
                     drawLine( ( drawPt0.x ), ( drawPt0.y ), ( drawPt1.x ), ( drawPt1.y ));
 
@@ -334,7 +337,7 @@ function clipLineParallel(line) {
     // TODO: implement clipping here!
     let cyclesInLoop = 0;
 
-    while(done != true) {
+    while(!done) {
         if(cyclesInLoop == 10){
             // console.log("Looped through", cyclesInLoop, "times"); //This is for testing purposes only because we sometimes get stuck in an infinite loop
             break;
@@ -344,12 +347,10 @@ function clipLineParallel(line) {
             result = line;//{pt0: p0, pt1: p1}; // if both outcodes are zero the line is completely inside
             done = true;
             console.log("Total Cyles in loop:", cyclesInLoop);
-            break;
         } else if(out0 & out1 != 0) { // trival reject
             result = null; // if the result of a bitwise and of the outcodes is not zero, the line is completely outside
             done = true;
             console.log("Trivial Reject");
-            break;
         } else {
             // TODO: complete 3D line clipping algorithm for parallel
             var outcode, t, x, y, z = null;
