@@ -5,19 +5,19 @@
 Implement perspective projection for 3D models: 35 pts DONE
     Transform models into canonical view volume - DONE (Patrick)
         Implement the matrix functions in transforms.js - DONE (Patrick)
-    Implement Cohen-Sutherland 3D line clipping - DONE (Patrick and Zack)
+    Implement Cohen-Sutherland 3D line clipping - TODO: debug (Patrick and Zack)
     Project onto view plane - DONE (Patrick)
     Draw 2D lines - DONE (Patrick)
 Implement camera movement to change the view of a scene: 10 pts
-    A/D keys: translate the PRP and SRP along the u-axis TODO: debug/improve
-    W/S keys: translate the PRP and SRP along the n-axis TODO: debug/improve
+    A/D keys: translate the PRP and SRP along the u-axis TODO: debug/improve (Patrick)
+    W/S keys: translate the PRP and SRP along the n-axis TODO: debug/improve (Patrick)
 
 Additional features (to earn a B or A)
 
 Implement parallel projection for 3D models: 5 pts 
-    Follows same steps as perspective TODO: debug/improve
+    Follows same steps as perspective TODO: debug (Zack and Patrick)
 Generate vertices and edges for common models: 5 pts
-    Cube: defined by center point, width, height, and depth (1 pt) TODO: finish rotation and draw
+    Cube: defined by center point, width, height, and depth (1 pt) TODO: finish rotation and draw (Patrick)
     Cone: defined by center point of base, radius, height, and number of sides (1 pt) TODO: entire function
     Cylinder: defined by center point, radius, height, and number of sides (1 pt) TODO: entire function
     Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) TODO: entire function

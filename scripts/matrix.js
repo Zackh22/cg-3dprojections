@@ -63,7 +63,6 @@ class Matrix {
         else {
             console.log("could not multiply - row/column mismatch");
         }
-        console.log("this: ", this, "rhs", rhs);
         return result;
     }
 
@@ -81,7 +80,6 @@ class Matrix {
 }
 
 Matrix.multiply = function(matrices) {
-    //console.log(matrices); // TODO: remove this log once debugging complete
     var i;
     var result = null;
     // ensure at least 2 matrices

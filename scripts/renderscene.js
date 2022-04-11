@@ -133,6 +133,8 @@ function animate(timestamp) {
 
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
+    // clear previous frame
+    ctx.clearRect(0, 0, view.width, view.height);
     /*
     console.log(scene); // print the scene
     console.log(scene.models.length); // print the number of models
@@ -166,14 +168,11 @@ function drawScene() {
 
     if(sceneType == "perspective") {
         // perspective
-        console.log("PERSPECTIVE");
-
         // general perspective projection: Nper = Sperh * SHpar * R * T(-PRP)   (09 - 3D Projections Part 2 slide 23)
         m = mat4x4MPer();
         n = mat4x4Perspective(prp, srp, vup, clip);
     } else {
         // parallel or assumed parallel if not defined
-        console.log("PARALLEL");
 
         m = mat4x4MPar();
         /*
@@ -201,28 +200,19 @@ function drawScene() {
         //console.log("model idx: "); console.log(i);
 
         let verts = [];
-        for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model
-            
-            //verts.push( scene.models[i].vertices[j] );
-            
+        for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model            
             verts.push(Matrix.multiply([ n , scene.models[i].vertices[j] ]));
         }        
 
         for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
-            //console.log(" edge array idx: "); console.log(j);
-            //console.log("edge array: "); console.log(scene.models[i].edges[j]);
             for(let k = 1; k < scene.models[i].edges[j].length; k++) { // loop through vertex indices
-                // console.log(j, k);
 
-                //console.log(" k value: "); console.log(scene.models[i].edges[j][k]);
                 // assign two vertex indices
                 let idx0 = scene.models[i].edges[j][k - 1];
                 let idx1 = scene.models[i].edges[j][k];
                 // assign two vertices using the indices
-                //console.log("idxs: ", idx0, idx1);
                 let vert0 = verts[idx0];
                 let vert1 = verts[idx1];
-                //console.log("verts: ", vert0, vert1);
                 
                 // create a line between them to be clipped
                 //let tempLine = {pt0: vert0, pt1: vert1};
@@ -241,6 +231,7 @@ function drawScene() {
 
                 if (clippedLine != null) { // if line is null it was entirely out of view
                     // transform the clipped lines using the w-values
+                    
                     point0 = new Vector4(clippedLine.pt0.x, clippedLine.pt0.y, clippedLine.pt0.z, vert0.w);
                     point1 = new Vector4(clippedLine.pt1.x, clippedLine.pt1.y, clippedLine.pt1.z, vert1.w);
 
@@ -250,13 +241,8 @@ function drawScene() {
                     point1.data[0] = (point1.data[0] / point1.data[3]);
                     point1.data[1] = (point1.data[1] / point1.data[3]);
 
-                    console.log("********** TRYING TO DRAW LINE **********");
                     var drawPt0 = Matrix.multiply([ window, m, clippedLine.pt0 ]);
-                    // console.log("***** PT0 calc done");
-                    // console.log("window:",window,"m:",m,"clippedLine.pt0:",clippedLine.pt0);
                     var drawPt1 = Matrix.multiply([ window, m, clippedLine.pt1 ]);
-                    // console.log("***** PT1 calc done");
-                    // console.log("window:",window,"m:",m,"clippedLine.pt1:",clippedLine.pt1);
                     drawPt0.x = drawPt0.x / drawPt0.w;
                     drawPt0.y = drawPt0.y / drawPt0.w;
                     drawPt1.x = drawPt1.x / drawPt1.w;
@@ -323,7 +309,6 @@ function outcodePerspective(vertex, z_min) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
-    // console.log("clipLinePar", line, line.pt0, line.pt0.values);    
     let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);    
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
@@ -334,19 +319,11 @@ function clipLineParallel(line) {
 
     let done = false;
 
-    // TODO: implement clipping here!
-    let cyclesInLoop = 0;
-
     while(!done) {
-        if(cyclesInLoop == 10){
-            // console.log("Looped through", cyclesInLoop, "times"); //This is for testing purposes only because we sometimes get stuck in an infinite loop
-            break;
-        }
         if(out0 | out1 == 0) { // trivial accept
             console.log("Trivial Accept.");
             result = line;//{pt0: p0, pt1: p1}; // if both outcodes are zero the line is completely inside
             done = true;
-            console.log("Total Cyles in loop:", cyclesInLoop);
         } else if(out0 & out1 != 0) { // trival reject
             result = null; // if the result of a bitwise and of the outcodes is not zero, the line is completely outside
             done = true;
@@ -371,93 +348,6 @@ function clipLineParallel(line) {
             let deltaY = y1-y0;
             let deltaZ = z1-z0;
 
-            if ((outcode & LEFT) != 0) { // clip to left edge
-                t = ( 0 - x0 ) / ( deltaX );
-                x = -1;
-                y = y0 + t * ( deltaY );
-                z = z0 + t * ( deltaZ );
-
-
-            } else if ((outcode & RIGHT) != 0) { // clip to right edge
-                t = ( view.width - x0 ) / ( deltaX );
-                x = 1;
-                y = y0 + t * ( deltaY );
-                z = z0 + t * ( deltaZ );
-                
-            } else if ((outcode & BOTTOM) != 0) { // clip to bottom edge
-                t = ( 0 - y0 ) / ( deltaY );
-                x = x0 + t * ( deltaX);
-                y = -1;
-                z = z0 + t * ( deltaZ );
-
-            } else if ((outcode & TOP) != 0) { // clip to top edge
-                t = ( view.height - y0 ) / ( deltaY );
-                x = x0 + t * ( deltaX);
-                y = 1;
-                z = z0 + t * ( deltaZ );
-            //TODO: Find out if these two edges need to come back in.  
-            } else if ((outcode & NEAR) != 0) { // clip to near edge
-                t = ( 0 - z0 ) / ( deltaZ );
-                x = x0 + t * ( deltaX);
-                y = y0 + t * ( deltaY );
-                z = 0;
-            } else if ((outcode & FAR) != 0) { // clip to far edge
-                t = ( -1 - z0 ) / ( deltaZ );
-                x = x0 + t * ( deltaX);
-                y = y0 + t * ( deltaY );
-                z = -1;
-            }
-
-            // else if ((selectout & NEAR) != 0) { // clip to near edge
-            //     t = ( view.width - x0 ) / ( deltaZ );
-            //     x = x0 + t * ( deltaX);
-            //     y = y0 + t * ( deltaY );
-            //     z = z0 + t * ( deltaZ );
-                
-            // } else if ((selectout & FAR) != 0) { // clip to far edge
-            //     t = ( view.width - x0 ) / ( deltaZ );
-            //     x = x0 + t * ( deltaX);
-            //     y = y0 + t * ( deltaY );
-            //     z = z0 + t * ( deltaZ );
-                
-            // }
-            //if (selectout === out0) {
-            //newPt = Vector3(x, y, z);
-            //console.log("p0", p0, p0.values);
-            //console.log("p1", p1, p1.values);
-            //console.log("newPt", newPt, newPt.values);
-            
-            
-            //TODO: why would you change out0 if outcode and out0 are the same?
-            //console.log("OUTCODE", outcode, "out0", out0, "out1", out1);
-            //if (outcode === out0) {
-            if(outcode === out0){
-                //out0 = outcodeParallel(selectpt);
-                p0.x = x;
-                p0.y = y;
-                p0.z = z;
-                out0 = outcodeParallel(p0);
-                //out0 = outcodeParallel(newPt);
-                //console.log("out0", out0, "and p0 changed to newPt");
-                
-                //p0 = newPt;
-                
-                //console.log(p0.values);
-            } else {
-                //out1 = outcodeParallel(selectpt);
-                //out1 = outcodeParallel(newPt);
-                p1.x = x;
-                p1.y = y;
-                p1.z = z;
-                out1 = outcodeParallel(p1);
-                
-                //p1 = newPt;
-                
-                //console.log("out1", out1, "and pt1 changed to newPt");
-            }
-            cyclesInLoop++;
-            console.log("END OF LOOP");
-
             // use parametric line equations to compute intersections
             // test for planes x = 1, x = -1, y = 1, y = -1, z = 0, z = -1
             /*
@@ -467,10 +357,64 @@ function clipLineParallel(line) {
             z(t) = z0 + t(z1 - z0)
             */
 
-            line.pt0 = p0;
-            line.pt1 = p1;
-            result = line;
+            if ((outcode & LEFT) != 0) { // clip to left edge
+                // t = ( 0 - x0 ) / ( deltaX );
+                t = ( -1 - x0 ) / ( deltaX );
+                x = -1;
+                y = y0 + t * ( deltaY );
+                z = z0 + t * ( deltaZ );
 
+
+            } else if ((outcode & RIGHT) != 0) { // clip to right edge
+                // t = ( view.width - x0 ) / ( deltaX );
+                t = ( 1 - x0 ) / ( deltaX );
+                x = 1;
+                y = y0 + t * ( deltaY );
+                z = z0 + t * ( deltaZ );
+                
+            } else if ((outcode & BOTTOM) != 0) { // clip to bottom edge
+                // t = ( 0 - y0 ) / ( deltaY );
+                t = ( -1 - y0 ) / ( deltaY );
+                x = x0 + t * ( deltaX);
+                y = -1;
+                z = z0 + t * ( deltaZ );
+
+            } else if ((outcode & TOP) != 0) { // clip to top edge
+                // t = ( view.height - y0 ) / ( deltaY );
+                t = ( 1 - y0 ) / ( deltaY );
+                x = x0 + t * ( deltaX);
+                y = 1;
+                z = z0 + t * ( deltaZ );
+            } else if ((outcode & NEAR) != 0) { // clip to near edge
+                // t = ( 0 - z0 ) / ( deltaZ );
+                t = ( -1 - z0 ) / ( deltaZ );
+                x = x0 + t * ( deltaX);
+                y = y0 + t * ( deltaY );
+                z = 0;
+            } else if ((outcode & FAR) != 0) { // clip to far edge
+                // t = ( -1 - z0 ) / ( deltaZ );
+                t = ( z0 ) / ( deltaZ );
+                x = x0 + t * ( deltaX);
+                y = y0 + t * ( deltaY );
+                z = -1;
+            }                                
+            
+            
+            if(outcode === out0){
+                p0.x = x;
+                p0.y = y;
+                p0.z = z;
+                out0 = outcodeParallel(p0); 
+            } else {
+                p1.x = x;
+                p1.y = y;
+                p1.z = z;
+                out1 = outcodeParallel(p1);                
+            }
+            console.log("END OF LOOP");
+
+            let output = Vector4(x, y, z, 1);
+            result = output;
         }
     }
     return result;
@@ -601,28 +545,24 @@ function onKeyDown(event) {
                 console.log("A");
                 scene.view.prp = scene.view.prp.subtract(u);
                 scene.view.srp = scene.view.srp.subtract(u);
-                clear();
                 drawScene();
                 break;
             case 68: // D key
                 console.log("D");
                 scene.view.prp = scene.view.prp.add(u);
                 scene.view.srp = scene.view.srp.add(u);
-                clear();
                 drawScene();
                 break;
             case 83: // S key
                 console.log("S");
                 scene.view.prp = scene.view.prp.add(n);
                 scene.view.srp = scene.view.srp.add(n);
-                clear();
                 drawScene();
                 break;
             case 87: // W key
                 console.log("W");
                 scene.view.prp = scene.view.prp.subtract(n);
                 scene.view.srp = scene.view.srp.subtract(n);
-                clear();
                 drawScene();
     
                 break;
@@ -642,18 +582,27 @@ function onKeyDown(event) {
                 break;
             case 65: // A key
                 console.log("A");
-    
+                scene.view.prp = scene.view.prp.subtract(u);
+                scene.view.srp = scene.view.srp.subtract(u);
+                drawScene();
                 break;
             case 68: // D key
                 console.log("D");
-    
+                scene.view.prp = scene.view.prp.add(u);
+                scene.view.srp = scene.view.srp.add(u);
+                drawScene();
                 break;
             case 83: // S key
                 console.log("S");
-                
+                scene.view.prp = scene.view.prp.add(n);
+                scene.view.srp = scene.view.srp.add(n);
+                drawScene();
                 break;
             case 87: // W key
                 console.log("W");
+                scene.view.prp = scene.view.prp.subtract(n);
+                scene.view.srp = scene.view.srp.subtract(n);
+                drawScene();
     
                 break;
         }
@@ -712,12 +661,6 @@ function drawLine(x1, y1, x2, y2) {
     ctx.fillStyle = '#FF0000';
     ctx.fillRect(x1 - 2, y1 - 2, 4, 4);
     ctx.fillRect(x2 - 2, y2 - 2, 4, 4);
-}
-
-
-// function to clear canvas
-function clear() {
-    ctx.clearRect(0, 0, view.width, view.height);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
