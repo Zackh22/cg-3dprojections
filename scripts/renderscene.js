@@ -69,7 +69,7 @@ function init() {
             // clip: [-16, 16, -15, 17, 18, 100]
 
             // side view - modified
-            type: 'parallel',
+            type: 'perspective',
             prp: Vector3(0, 0, 0),
             srp: Vector3(20, 10, -45),
             vup: Vector3(0, 1, 0),
@@ -160,32 +160,7 @@ function drawScene() {
                     [ 0, 0, 1, 0],
                     [ 0, 0, 0, 1]];
     
-    // TODO: implement drawing here!
     // For each model, for each edge
-
-    // ********** BEGIN TEST OF DRAWING HOUSE WITHOUT TRANSFORMATIONS OR CLIPPING **********
-    /*
-    for(let i = 0; i < scene.models.length; i++) { // going through models in scene
-        for(let j = 0; j < scene.models[i].edges.length; j++) { // going through edge arrays
-            for(let k = 1; k < scene.models[i].edges[j].length; k++) { // going through values in each edge array
-                // assign two vertex indices
-                let idx0 = scene.models[i].edges[j][k - 1];
-                let idx1 = scene.models[i].edges[j][k];
-                // assign two vertices using the indices
-                let vert0 = scene.models[i].vertices[idx0];
-                let vert1 = scene.models[i].vertices[idx1];
-                // create a line between them to be clipped
-                let lineToDraw = {pt0: vert0, pt1: vert1};
-                console.log("line to draw: "); console.log(lineToDraw);
-                console.log()
-                drawLine(lineToDraw.pt0.x, lineToDraw.pt0.y, lineToDraw.pt1.x, lineToDraw.pt1.y);
-            }
-        }
-    }
-    */
-    // ********** END TEST OF DRAWING HOUSE WITHOUT TRANSFORMATIONS OR CLIPPING **********
-
-    
 
     let m, n; // declaring here to avoid scope issues - gets value based on sceneType;
 
@@ -202,10 +177,10 @@ function drawScene() {
 
         m = mat4x4MPar();
         /*
-        console.log("prp"); console.log(prp);
-        console.log("srp"); console.log(srp);
-        console.log("vup"); console.log(vup);
-        console.log("clip"); console.log(clip);
+        console.log("prp", prp);
+        console.log("srp", srp);
+        console.log("vup", vup);
+        console.log("clip", clip);
         */
         n = mat4x4Parallel(prp, srp, vup, clip);
 
@@ -237,21 +212,25 @@ function drawScene() {
             //console.log(" edge array idx: "); console.log(j);
             //console.log("edge array: "); console.log(scene.models[i].edges[j]);
             for(let k = 1; k < scene.models[i].edges[j].length; k++) { // loop through vertex indices
-                console.log(j, k);
+                // console.log(j, k);
 
                 //console.log(" k value: "); console.log(scene.models[i].edges[j][k]);
                 // assign two vertex indices
                 let idx0 = scene.models[i].edges[j][k - 1];
                 let idx1 = scene.models[i].edges[j][k];
                 // assign two vertices using the indices
-                //console.log("idxs:");console.log(idx0);console.log(idx1);
+                //console.log("idxs: ", idx0, idx1);
                 let vert0 = verts[idx0];
                 let vert1 = verts[idx1];
-                //console.log("verts:");console.log(vert0);console.log(vert1);
+                //console.log("verts: ", vert0, vert1);
                 
                 
                 // create a line between them to be clipped
+                //let tempLine = {pt0: vert0, pt1: vert1};
+                // vert0 = Vector4(verts[idx0].x, verts[idx0].y, verts[idx0].z, 1);
+                // vert1 = Vector4(verts[idx1].x, verts[idx1].y, verts[idx1].z, 1);
                 let tempLine = {pt0: vert0, pt1: vert1};
+
                 // clip the line based on view type
                 if(sceneType == "perspective") {
                     var clippedLine = clipLinePerspective( tempLine, ( -1 * scene.view.clip[4] ) / scene.view.clip[5] );
@@ -262,6 +241,16 @@ function drawScene() {
                 // draw the clipped line
 
                 if (clippedLine != null) { // if line is null it was entirely out of view
+                    // transform the clipped lines using the w-values
+                    point0 = new Vector4(clippedLine.pt0.x, clippedLine.pt0.y, clippedLine.pt0.z, vert0.w);
+                    point1 = new Vector4(clippedLine.pt1.x, clippedLine.pt1.y, clippedLine.pt1.z, vert1.w);
+
+                    // convert points from orthographic to cartesian by dividing by w
+                    point0.data[0] = (point0.data[0] / point0.data[3]);
+                    point0.data[1] = (point0.data[1] / point0.data[3]);
+                    point1.data[0] = (point1.data[0] / point1.data[3]);
+                    point1.data[1] = (point1.data[1] / point1.data[3]);
+
                     console.log("********** TRYING TO DRAW LINE **********");
                     var drawPt0 = Matrix.multiply([ window, m, clippedLine.pt0 ]);
                     console.log("***** PT0 calc done");
@@ -271,6 +260,7 @@ function drawScene() {
                     console.log("window:",window,"m:",m,"clippedLine.pt1:",clippedLine.pt1);
 
                     drawLine( ( drawPt0.x ), ( drawPt0.y ), ( drawPt1.x ), ( drawPt1.y ));
+
                 }
             }
         }
@@ -330,7 +320,7 @@ function outcodePerspective(vertex, z_min) {
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
-    console.log("clipLinePar", line, line.pt0, line.pt0.values);    
+    // console.log("clipLinePar", line, line.pt0, line.pt0.values);    
     let result = null;
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);    
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
@@ -346,7 +336,7 @@ function clipLineParallel(line) {
 
     while(done != true) {
         if(cyclesInLoop == 10){
-            console.log("Looped through", cyclesInLoop, "times"); //This is for testing purposes only because we sometimes get stuck in an infinite loop
+            // console.log("Looped through", cyclesInLoop, "times"); //This is for testing purposes only because we sometimes get stuck in an infinite loop
             break;
         }
         if(out0 | out1 == 0) { // trivial accept
@@ -584,26 +574,92 @@ function clipLinePerspective(line, z_min) {
 
 // Called when user presses a key on the keyboard down 
 function onKeyDown(event) {
-    switch (event.keyCode) {
-        case 37: // LEFT Arrow
-            console.log("left");
-            break;
-        case 39: // RIGHT Arrow
-            console.log("right");
-            break;
-        case 65: // A key
-            console.log("A");
-            break;
-        case 68: // D key
-            console.log("D");
-            break;
-        case 83: // S key
-            console.log("S");
-            break;
-        case 87: // W key
-            console.log("W");
-            break;
+
+    let n = scene.view.prp.subtract(scene.view.srp);
+    n.normalize();
+    let u = scene.view.vup.cross(n);
+    u.normalize();
+    let v = n.cross(u);
+    v.normalize();
+
+    let srp;
+    let t1, t2, rx, ry, rz, rot = new Matrix(4, 4);
+
+    if(scene.view.type == 'perspective') {
+
+        switch (event.keyCode) {
+            case 37: // LEFT Arrow
+                console.log("left");
+    
+                break;
+            case 39: // RIGHT Arrow
+                console.log("right");
+    
+                break;
+            case 65: // A key
+                console.log("A");
+                scene.view.prp = scene.view.prp.subtract(u);
+                scene.view.srp = scene.view.srp.subtract(u);
+                clear();
+                drawScene();
+                break;
+            case 68: // D key
+                console.log("D");
+                scene.view.prp = scene.view.prp.add(u);
+                scene.view.srp = scene.view.srp.add(u);
+                clear();
+                drawScene();
+                break;
+            case 83: // S key
+                console.log("S");
+                scene.view.prp = scene.view.prp.add(n);
+                scene.view.srp = scene.view.srp.add(n);
+                clear();
+                drawScene();
+                break;
+            case 87: // W key
+                console.log("W");
+                scene.view.prp = scene.view.prp.subtract(n);
+                scene.view.srp = scene.view.srp.subtract(n);
+                clear();
+                drawScene();
+    
+                break;
+        }
+
+    } else {
+        // parallel or assumed parallel if undefined
+
+        switch (event.keyCode) {
+            case 37: // LEFT Arrow
+                console.log("left");
+    
+                break;
+            case 39: // RIGHT Arrow
+                console.log("right");
+    
+                break;
+            case 65: // A key
+                console.log("A");
+    
+                break;
+            case 68: // D key
+                console.log("D");
+    
+                break;
+            case 83: // S key
+                console.log("S");
+                
+                break;
+            case 87: // W key
+                console.log("W");
+    
+                break;
+        }
+
     }
+
+    
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -655,4 +711,55 @@ function drawLine(x1, y1, x2, y2) {
     ctx.fillStyle = '#FF0000';
     ctx.fillRect(x1 - 2, y1 - 2, 4, 4);
     ctx.fillRect(x2 - 2, y2 - 2, 4, 4);
+}
+
+
+// function to clear canvas
+function clear() {
+    ctx.clearRect(0, 0, view.width, view.height);
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+// SHAPE DRAWING FUNCTIONS                                                         //
+///////////////////////////////////////////////////////////////////////////////////
+
+function drawCube(center, width, height, depth, currentTheta, axis) {
+    let vertices = [];
+    let edges = [];
+    let x = center[0];
+    let y = center[1];
+    let z = center[2];
+    
+    vertices.push(Vector4( x + ( width / 2 ), y + ( height / 2 ) , z + (depth / 2 ), 1 )); // 1 1 1
+    vertices.push(Vector4( x + ( width / 2 ), y + ( height / 2 ) , z - (depth / 2 ), 1 )); // 1 1 0
+    vertices.push(Vector4( x + ( width / 2 ), y - ( height / 2 ) , z + (depth / 2 ), 1 )); // 1 0 1
+    vertices.push(Vector4( x + ( width / 2 ), y - ( height / 2 ) , z - (depth / 2 ), 1 )); // 1 0 0
+    vertices.push(Vector4( x - ( width / 2 ), y + ( height / 2 ) , z + (depth / 2 ), 1 )); // 0 1 1
+    vertices.push(Vector4( x - ( width / 2 ), y + ( height / 2 ) , z - (depth / 2 ), 1 )); // 0 1 0
+    vertices.push(Vector4( x - ( width / 2 ), y - ( height / 2 ) , z + (depth / 2 ), 1 )); // 0 0 1
+    vertices.push(Vector4( x - ( width / 2 ), y - ( height / 2 ) , z - (depth / 2 ), 1 )); // 0 0 0
+
+    // draw lines between vertices
+    edges.push([0, 2, 3, 1, 0]);
+    edges.push([4, 6, 7, 5, 4]);
+    edges.push([0, 4]);
+    edges.push([1, 5]);
+    edges.push([2, 6]);
+    edges.push([3, 7]);
+
+    // how do we take into account rotation?
+
+    // draw cube
+}
+
+function drawCone(center, radius, height, sides, currentTheta, axis) {
+
+}
+
+function drawCylinder(center, radius, height, sides, currentTheta, axis) {
+
+}
+
+function drawSphere(center, radius, slices, stacks, currentTheta, axis) {
+    
 }
