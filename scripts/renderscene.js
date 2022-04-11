@@ -310,111 +310,93 @@ function outcodePerspective(vertex, z_min) {
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
 function clipLineParallel(line) {
     let result = null;
+    result = {
+        pt0: Vector4(line.pt0.x, line.pt0.y, line.pt0.z, 1),
+        pt1: Vector4(line.pt1.x, line.pt1.y, line.pt1.z, 1)
+    };
+    
     let p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);    
     let p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
     let out0 = outcodeParallel(p0);
     let out1 = outcodeParallel(p1);
+
+    if(out0 | out1 == 0) return line;
 
     // left: x = -1, right: x = 1, bottom: y = -1, top: y = 1, far: z = -1, near: z = 0
 
     let done = false;
 
     while(!done) {
-        if(out0 | out1 == 0) { // trivial accept
-            console.log("Trivial Accept.");
-            result = line;//{pt0: p0, pt1: p1}; // if both outcodes are zero the line is completely inside
-            done = true;
-        } else if(out0 & out1 != 0) { // trival reject
-            result = null; // if the result of a bitwise and of the outcodes is not zero, the line is completely outside
-            done = true;
-            console.log("Trivial Reject");
+
+        p0 = Vector3(line.pt0.x, line.pt0.y, line.pt0.z);    
+        p1 = Vector3(line.pt1.x, line.pt1.y, line.pt1.z);
+        out0 = outcodeParallel(p0);
+        out1 = outcodeParallel(p1);
+        done = out0 | out1; // check for trivial accept
+
+        if((out0 & out1) != 0) return null; // check for trivial reject
+
+        // variable names selected to match powerpoints/notes
+        let x0 = p0.x;
+        let x1 = p1.x;
+        let y0 = p0.y;
+        let y1 = p1.y;
+        let z0 = p0.z;
+        let z1 = p1.z;
+        let deltaX = x1-x0;
+        let deltaY = y1-y0;
+        let deltaZ = z1-z0;
+
+        let outcode, selectedPoint;
+
+        if (out0 != 0) {
+            outcode = out0;
+            selectedPoint = {x: x0, y: y0, z: z0};
         } else {
-            // TODO: complete 3D line clipping algorithm for parallel
-            var outcode, t, x, y, z = null;
+            outcode = out1;
+            selectedPoint = {x: x1, y:y1, z: z1};
+        }   
 
-            if (out0 != 0) {
-                outcode = out0;
-            } else {
-                outcode = out1;
-            }
-            
-            let x0 = p0.x;
-            let x1 = p1.x;
-            let y0 = p0.y;
-            let y1 = p1.y;
-            let z0 = p0.z;
-            let z1 = p1.z;
-            let deltaX = x1-x0;
-            let deltaY = y1-y0;
-            let deltaZ = z1-z0;
+        // use parametric line equations to compute intersections
+        // test for planes x = 1, x = -1, y = 1, y = -1, z = 0, z = -1
+        /*
+        parametric 3d line equations:
+        x(t) = x0 + t(x1 - x0)
+        y(t) = y0 + t(y1 - y0)
+        z(t) = z0 + t(z1 - z0)
+        */
 
-            // use parametric line equations to compute intersections
-            // test for planes x = 1, x = -1, y = 1, y = -1, z = 0, z = -1
-            /*
-            parametric 3d line equations:
-            x(t) = x0 + t(x1 - x0)
-            y(t) = y0 + t(y1 - y0)
-            z(t) = z0 + t(z1 - z0)
-            */
+        let x, y, z, t;
 
-            if ((outcode & LEFT) != 0) { // clip to left edge
-                // t = ( 0 - x0 ) / ( deltaX );
-                t = ( -1 - x0 ) / ( deltaX );
-                x = -1;
-                y = y0 + t * ( deltaY );
-                z = z0 + t * ( deltaZ );
+        if ((outcode & LEFT) != 0) { // clip to left plane
+            t = ( -1 - x0 ) / ( deltaX );
+        } else if ((outcode & RIGHT) != 0) { // clip to right plane
+            t = ( 1 - x0 ) / ( deltaX );
+        } else if ((outcode & BOTTOM) != 0) { // clip to bottom plane
+            t = ( -1 - y0 ) / ( deltaY );
+        } else if ((outcode & TOP) != 0) { // clip to top plane
+            t = ( 1 - y0 ) / ( deltaY );
+        } else if ((outcode & NEAR) != 0) { // clip to near plane
+            t = ( -z0 ) / ( deltaZ );
+        } else if ((outcode & FAR) != 0) { // clip to far plane
+            t = ( -z0 - 1 ) / ( deltaZ );
+        }
+        
+        x = (( 1 - t ) * p0.x ) + ( t * p1.x );
+        selectedPoint.x = x;
+        y = (( 1 - t ) * p0.y ) + ( t * p1.y );
+        selectedPoint.y = y;
+        z = (( 1 - t ) * p0.z ) + ( t * p1.z );
+        selectedPoint.z = z;
 
-
-            } else if ((outcode & RIGHT) != 0) { // clip to right edge
-                // t = ( view.width - x0 ) / ( deltaX );
-                t = ( 1 - x0 ) / ( deltaX );
-                x = 1;
-                y = y0 + t * ( deltaY );
-                z = z0 + t * ( deltaZ );
-                
-            } else if ((outcode & BOTTOM) != 0) { // clip to bottom edge
-                // t = ( 0 - y0 ) / ( deltaY );
-                t = ( -1 - y0 ) / ( deltaY );
-                x = x0 + t * ( deltaX);
-                y = -1;
-                z = z0 + t * ( deltaZ );
-
-            } else if ((outcode & TOP) != 0) { // clip to top edge
-                // t = ( view.height - y0 ) / ( deltaY );
-                t = ( 1 - y0 ) / ( deltaY );
-                x = x0 + t * ( deltaX);
-                y = 1;
-                z = z0 + t * ( deltaZ );
-            } else if ((outcode & NEAR) != 0) { // clip to near edge
-                // t = ( 0 - z0 ) / ( deltaZ );
-                t = ( -1 - z0 ) / ( deltaZ );
-                x = x0 + t * ( deltaX);
-                y = y0 + t * ( deltaY );
-                z = 0;
-            } else if ((outcode & FAR) != 0) { // clip to far edge
-                // t = ( -1 - z0 ) / ( deltaZ );
-                t = ( z0 ) / ( deltaZ );
-                x = x0 + t * ( deltaX);
-                y = y0 + t * ( deltaY );
-                z = -1;
-            }                                
-            
-            
-            if(outcode === out0){
-                p0.x = x;
-                p0.y = y;
-                p0.z = z;
-                out0 = outcodeParallel(p0); 
-            } else {
-                p1.x = x;
-                p1.y = y;
-                p1.z = z;
-                out1 = outcodeParallel(p1);                
-            }
-            console.log("END OF LOOP");
-
-            let output = Vector4(x, y, z, 1);
-            result = output;
+        if(out0 != 0) {
+            result.pt0.x = selectedPoint.x;
+            result.pt0.y = selectedPoint.y;
+            result.pt0.z = selectedPoint.z;
+        } else {
+            result.pt1.x = selectedPoint.x;
+            result.pt1.y = selectedPoint.y;
+            result.pt1.z = selectedPoint.z;
         }
     }
     return result;
@@ -527,87 +509,129 @@ function onKeyDown(event) {
     let v = n.cross(u);
     v.normalize();
 
+    let theta = Math.PI/8;
+    let rot = new Matrix(3,3); // rotation matrix
+
+    let costTheta = Math.cos(theta);
+    let sinTheta = Math.sin(theta);
+
     let srp;
-    let t1, t2, rx, ry, rz, rot = new Matrix(4, 4);
+    let t1, t2, rx, ry, rz = new Matrix(4, 4);
 
-    if(scene.view.type == 'perspective') {
+    switch (event.keyCode) {
+        case 37: // LEFT Arrow
+            console.log("left");
+            
+            break;
+        case 39: // RIGHT Arrow
+            console.log("right");
+            // need negative angle
+            theta = -theta;
 
-        switch (event.keyCode) {
-            case 37: // LEFT Arrow
-                console.log("left");
-    
-                break;
-            case 39: // RIGHT Arrow
-                console.log("right");
-    
-                break;
-            case 65: // A key
-                console.log("A");
-                scene.view.prp = scene.view.prp.subtract(u);
-                scene.view.srp = scene.view.srp.subtract(u);
-                drawScene();
-                break;
-            case 68: // D key
-                console.log("D");
-                scene.view.prp = scene.view.prp.add(u);
-                scene.view.srp = scene.view.srp.add(u);
-                drawScene();
-                break;
-            case 83: // S key
-                console.log("S");
-                scene.view.prp = scene.view.prp.add(n);
-                scene.view.srp = scene.view.srp.add(n);
-                drawScene();
-                break;
-            case 87: // W key
-                console.log("W");
-                scene.view.prp = scene.view.prp.subtract(n);
-                scene.view.srp = scene.view.srp.subtract(n);
-                drawScene();
-    
-                break;
-        }
-
-    } else {
-        // parallel or assumed parallel if undefined
-
-        switch (event.keyCode) {
-            case 37: // LEFT Arrow
-                console.log("left");
-    
-                break;
-            case 39: // RIGHT Arrow
-                console.log("right");
-    
-                break;
-            case 65: // A key
-                console.log("A");
-                scene.view.prp = scene.view.prp.subtract(u);
-                scene.view.srp = scene.view.srp.subtract(u);
-                drawScene();
-                break;
-            case 68: // D key
-                console.log("D");
-                scene.view.prp = scene.view.prp.add(u);
-                scene.view.srp = scene.view.srp.add(u);
-                drawScene();
-                break;
-            case 83: // S key
-                console.log("S");
-                scene.view.prp = scene.view.prp.add(n);
-                scene.view.srp = scene.view.srp.add(n);
-                drawScene();
-                break;
-            case 87: // W key
-                console.log("W");
-                scene.view.prp = scene.view.prp.subtract(n);
-                scene.view.srp = scene.view.srp.subtract(n);
-                drawScene();
-    
-                break;
-        }
-
+            break;
+        case 65: // A key
+            console.log("A");
+            scene.view.prp = scene.view.prp.subtract(u);
+            scene.view.srp = scene.view.srp.subtract(u);
+            drawScene();
+            break;
+        case 68: // D key
+            console.log("D");
+            scene.view.prp = scene.view.prp.add(u);
+            scene.view.srp = scene.view.srp.add(u);
+            drawScene();
+            break;
+        case 83: // S key
+            console.log("S");
+            scene.view.prp = scene.view.prp.add(n);
+            scene.view.srp = scene.view.srp.add(n);
+            drawScene();
+            break;
+        case 87: // W key
+            console.log("W");
+            scene.view.prp = scene.view.prp.subtract(n);
+            scene.view.srp = scene.view.srp.subtract(n);
+            drawScene();
+            break;
     }
+
+    // if(scene.view.type == 'perspective') {
+
+    //     switch (event.keyCode) {
+    //         case 37: // LEFT Arrow
+    //             console.log("left");
+    
+    //             break;
+    //         case 39: // RIGHT Arrow
+    //             console.log("right");
+    
+    //             break;
+    //         case 65: // A key
+    //             console.log("A");
+    //             scene.view.prp = scene.view.prp.subtract(u);
+    //             scene.view.srp = scene.view.srp.subtract(u);
+    //             drawScene();
+    //             break;
+    //         case 68: // D key
+    //             console.log("D");
+    //             scene.view.prp = scene.view.prp.add(u);
+    //             scene.view.srp = scene.view.srp.add(u);
+    //             drawScene();
+    //             break;
+    //         case 83: // S key
+    //             console.log("S");
+    //             scene.view.prp = scene.view.prp.add(n);
+    //             scene.view.srp = scene.view.srp.add(n);
+    //             drawScene();
+    //             break;
+    //         case 87: // W key
+    //             console.log("W");
+    //             scene.view.prp = scene.view.prp.subtract(n);
+    //             scene.view.srp = scene.view.srp.subtract(n);
+    //             drawScene();
+    //             break;
+    //     }
+
+    // } else {
+    //     // parallel or assumed parallel if undefined
+
+    //     switch (event.keyCode) {
+    //         case 37: // LEFT Arrow
+    //             console.log("left");
+    
+    //             break;
+    //         case 39: // RIGHT Arrow
+    //             console.log("right");
+    
+    //             break;
+    //         case 65: // A key
+    //             console.log("A");
+    //             scene.view.prp = scene.view.prp.subtract(u);
+    //             scene.view.srp = scene.view.srp.subtract(u);
+    //             drawScene();
+    //             break;
+    //         case 68: // D key
+    //             console.log("D");
+    //             scene.view.prp = scene.view.prp.add(u);
+    //             scene.view.srp = scene.view.srp.add(u);
+    //             drawScene();
+    //             break;
+    //         case 83: // S key
+    //             console.log("S");
+    //             scene.view.prp = scene.view.prp.add(n);
+    //             scene.view.srp = scene.view.srp.add(n);
+    //             drawScene();
+    //             break;
+    //         case 87: // W key
+    //             console.log("W");
+    //             scene.view.prp = scene.view.prp.subtract(n);
+    //             scene.view.srp = scene.view.srp.subtract(n);
+    //             drawScene();
+    
+    //             break;
+    //     }
+
+    // }
 
     
 }
