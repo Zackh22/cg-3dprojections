@@ -246,6 +246,7 @@ function drawScene() {
             currentModel.edges = output[1];
         } else if(currentModel.type == "sphere") {
             let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
+            // let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
             currentModel.vertices = output[0];
             currentModel.edges = output[1];
         }
@@ -720,55 +721,6 @@ function drawCube(center, width, height, depth, currentTheta, axis) {
     return([vertices, edges]);
 }
 
-
-/*
-        models: [
-            {
-                type: 'generic',
-                vertices: [
-                    Vector4( 0,  0, -30, 1),
-                    Vector4(20,  0, -30, 1),
-                    Vector4(20, 12, -30, 1),
-                    Vector4(10, 20, -30, 1),
-                    Vector4( 0, 12, -30, 1),
-                    Vector4( 0,  0, -60, 1),
-                    Vector4(20,  0, -60, 1),
-                    Vector4(20, 12, -60, 1),
-                    Vector4(10, 20, -60, 1),
-                    Vector4( 0, 12, -60, 1)
-                ],
-                edges: [
-                    [0, 1, 2, 3, 4, 0],
-                    [5, 6, 7, 8, 9, 5],
-                    [0, 5],
-                    [1, 6],
-                    [2, 7],
-                    [3, 8],
-                    [4, 9]
-                ],
-                matrix: new Matrix(4, 4)
-            },
-            {
-                type: "cube",
-                center: [4, 4, -10],
-                width: 8,
-                height: 8,
-                depth: 8
-            },
-            {
-                type: "cylinder",
-                center: [12, 10, -49],
-                radius: 1.5,
-                height: 5,
-                sides: 12,
-                animation: {
-                    axis: "y",
-                    rps: 0.5
-                }
-            }
-        ]
-        */
-
 function drawCone(centerPointOfBase, radius, height, sides) {
     let vertices = [];
     let edges = [];
@@ -843,15 +795,44 @@ function drawCylinder(center, radius, height, sides) {
     return([vertices, edges]);
 }
 
-function drawSphere(center, radius, slices, stacks) {
-    console.log("SHOULD SEE A SPHERE");
-    stacks = 12;
-    slices = 12;
+function drawSphereBetter(center, radius, slices, stacks) {
+    console.log("SHOULD SEE SPHERE");
     let vertices = [];
     let edges = [];
-    let xCenter = center[0];
-    let yCenter = center[1];
-    let zCenter = center[2];
+    
+    stacks = 15;
+    slices = 15;
+    
+    let sliceAngle = 2 * Math.PI / slices;
+    let stackAngle = Math.PI / stacks;
+
+    for(let i = 0; i < stacks + 1; i++) {
+        let phi = i * stackAngle;
+        for(let j = 0; j < slices; j++) {
+            let theta = j * sliceAngle;
+            let x = center[0] + radius * Math.cos(theta) * Math.sin(phi);
+            let y = center[1] + radius * Math.cos(phi);
+            let z = center[2] + radius * Math.sin(phi) * Math.sin(theta);
+            let point = Vector4(x, y, z, 1);
+            vertices.push(point);
+        }
+    }
+
+    for(let i = 0; i < stacks; i++) {
+        for(let j = 0; j < slices; j++) {
+            edges.push([slices * i + j, slices * (i + 1) + j]);
+            edges.push([slices * i + j, slices * i + j + 1]);
+        }
+    }
+
+    return([vertices,edges]);
+}
+
+function drawSphere(center, radius, slices, stacks) {
+    stacks = 15;
+    slices = 15;
+    let vertices = [];
+    let edges = [];
     let sides = 25;
 
 
@@ -862,20 +843,9 @@ function drawSphere(center, radius, slices, stacks) {
         let currentHeight = i / stacks * radius * 2 - radius;
         let angle = Math.acos(currentHeight / radius);
         let currentRadius = Math.tan(angle) * currentHeight;
-
-        // draw stack circle
-        let offset = vertices.length;
-        for(let j = 0; j < sides; j++) {
-            let x = Math.cos(2 * Math.PI * j / sides) * radius + xCenter; // cos( 2pi * i / sides) * radius + coordinate offset
-            let z = Math.sin(2 * Math.PI * j / sides) * radius + zCenter; // sin( 2pi * i / sides) * radius + coordinate offset
-            vertices.push(Vector4(x, yCenter, z, 1));
-        }
-        let circleEdges = [];
-        for(let j = offset; j < offset + sides; j++) {
-            circleEdges.push(j);
-        }
-        circleEdges.push(offset); // push the starting point again to close the circle
-        edges.push(circleEdges);
+        if(currentRadius == 0) currentRadius = radius; // get middle circle to draw
+        let circleCenter = [center[0], center[1] + currentHeight, center[2]];
+        drawStackCircle(circleCenter, currentRadius, sides, vertices, edges);
     }
 
     // slices
@@ -884,64 +854,48 @@ function drawSphere(center, radius, slices, stacks) {
         let currentDepth = i / slices * radius * 2 - radius;
         let angle = Math.acos(currentDepth / radius);
         let currentRadius = Math.tan(angle) * currentDepth;
-
-        // draw slice circle
-        let offset = vertices.length;
+        if(currentRadius == 0) currentRadius = radius; // get middle circle to draw
+        let circleCenter = [center[0], center[1], center[2] + currentDepth];
+        drawSliceCircle(circleCenter, currentRadius, sides, vertices, edges);
     }
-
-
-
-    // for(var stackIdx = 0; stackIdx < stacks/2; stackIdx++) {
-    //     for(let i = 0; i <= sides; i++) {
-    //         console.log("Radius: ", radius);
-    //         let x = Math.cos( incrementAngle * i ) * (radius - (radius / stackIdx)) + xCenter;
-    //         let y = yCenter - (2 * stackIdx);
-    //         let z = Math.sin( incrementAngle * i ) * (radius - (radius / stackIdx)) + zCenter;
-    //         let coordinate = Vector4(x, y, z, 1);
-    //         vertices.push(coordinate);
-    //         // x = Math.cos( incrementAngle * i ) * (radius) + xCenter;
-    //         // y = yCenter + (2 * stackIdx);
-    //         // z = Math.sin( incrementAngle * i ) * (radius) + zCenter;
-    //         // coordinate = Vector4(x, y, z, 1);
-    //         // vertices.push(coordinate);
-    //     }
-    //     // [circle0.... circle1...]
-    //     for(let j = 0; j < sides; j++) {
-    //         let offset = (sides + 1) * stackIdx;
-    //         edges.push([j + offset, j + offset + 1]);
-    //     }
-    //     for(let i = 0; i <= sides; i++) {
-    //         // let x = vertices[vertices.length - sides + i][0];
-    //         // let y = vertices[vertices.length - sides + i].y;
-    //         // let z = vertices[vertices.length - sides + i].z;
-    //         // let coordinate = Vector4(x, y, z, 1);
-    //         ////vertices.push(coordinate);
-    //         // x = Math.cos( incrementAngle * i ) * (radius) + xCenter;
-    //         // y = yCenter + (2 * stackIdx);
-    //         // z = Math.sin( incrementAngle * i ) * (radius) + zCenter;
-    //         // coordinate = Vector4(x, y, z, 1);
-    //         // vertices.push(coordinate);
-    //     }
-    // }
-    
-    // slices
-    // let stackOffset = vertices.length + 1;
-    // for(let sliceIdx = 0; sliceIdx < slices; sliceIdx++) { // work down
-    //     for(let i = 0; i <= sides; i++) {
-    //         let x = Math.cos( incrementAngle * i ) * radius + xCenter;
-    //         let y = Math.sin( incrementAngle * i ) * radius + yCenter;
-    //         let z = zCenter - (2 * sliceIdx);
-    //         let coordinate = Vector4(x, y, z, 1);
-    //         vertices.push(coordinate);
-    //     }
-    //     // [circle0.... circle1...]
-    //     for(let j = 0; j < sides; j++) {
-    //         let offset = (sides + 1) * sliceIdx;
-    //         edges.push([j + offset + stackOffset - 1, j + offset + stackOffset]);
-    //     }
-    // }
     
     return([vertices,edges]);
+}
+
+function drawStackCircle(center, radius, sides, vertices, edges) {
+    let offset = vertices.length;
+
+    // circle vertices
+    for(let i = 0; i < sides; i++) {
+        let x = Math.cos(2 * i * Math.PI / sides) * radius + center[0];
+        let z = Math.sin(2 * i * Math.PI / sides) * radius + center[2];
+        vertices.push(Vector4(x, center[1], z, 1));
+    }
+    // circle edges
+    let circleEdges = [];
+    for(let i = offset; i < offset + sides; i++) {
+        circleEdges.push(i);
+    }
+    circleEdges.push(offset);
+    edges.push(circleEdges);
+}
+
+function drawSliceCircle(center, radius, sides, vertices, edges) {
+    let offset = vertices.length;
+
+    // circle vertices
+    for(let i = 0; i < sides; i++) {
+        let x = Math.cos(2 * i * Math.PI / sides) * radius + center[0];
+        let y = Math.sin(2 * i * Math.PI / sides) * radius + center[1];
+        vertices.push(Vector4(x, y, center[2], 1));
+    }
+    // circle edges
+    let circleEdges = [];
+    for(let i = offset; i < offset + sides; i++) {
+        circleEdges.push(i);
+    }
+    circleEdges.push(offset);
+    edges.push(circleEdges);
 }
 
 function draw2DCircle(centerOfCircle, sides, radius) {
