@@ -21,10 +21,10 @@ Follows same steps as perspective TODO: debug (Patrick and Zack)
     Project onto view plane - DONE (Patrick 100%)
     Draw 2D lines - DONE (Zack 100%)
 Generate vertices and edges for common models: 5 pts
-    Cube: defined by center point, width, height, and depth (1 pt) (Patrick) TODO: finish and test feature
-    Cone: defined by center point of base, radius, height, and number of sides (1 pt) (Patrick) TODO: finish and test feature
-    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick) TODO: finish and test feature
-    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) () TODO: entire feature
+    Cube: defined by center point, width, height, and depth (1 pt) (Patrick and Zack) TODO: finish and test feature
+    Cone: defined by center point of base, radius, height, and number of sides (1 pt) (Patrick and Zack) TODO: finish and test feature
+    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick and Zack) TODO: finish and test feature
+    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) (Patrick and Zack) TODO: entire feature
 Allow for models to have a rotation animation: 5 pts
     Can be about the x, y, or z axis () TODO: entire feature
     Defined in terms of revolutions per second () TODO: entire feature
