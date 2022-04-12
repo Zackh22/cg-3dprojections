@@ -157,7 +157,7 @@ function init() {
 
 // Animation loop - repeatedly calls rendering code
 function animate(timestamp) {
-    // step 1: calculate time (time since start)
+    // step 1: calculate time (time since start) 
     let time = timestamp - start_time;
     
     // step 2: transform models based on time
@@ -245,8 +245,8 @@ function drawScene() {
             currentModel.vertices = output[0];
             currentModel.edges = output[1];
         } else if(currentModel.type == "sphere") {
-            let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
-            // let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
+            // let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
+            let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
             currentModel.vertices = output[0];
             currentModel.edges = output[1];
         }
@@ -800,28 +800,63 @@ function drawSphereBetter(center, radius, slices, stacks) {
     let vertices = [];
     let edges = [];
     
-    stacks = 15;
-    slices = 15;
-    
-    let sliceAngle = 2 * Math.PI / slices;
-    let stackAngle = Math.PI / stacks;
+    stacks = 25;
+    slices = 25;
+    // spherical coordinates: r, theta, phi
+    // theta: [0, pi]
+    // phi: [0, 2pi]
 
-    for(let i = 0; i < stacks + 1; i++) {
-        let phi = i * stackAngle;
+    let sliceAngle = Math.PI / slices;
+    let stackAngle = 2 * Math.PI / stacks;
+
+    // for(let i = 0; i < stacks + 1; i++) {
+    //     let phi = i * stackAngle;
+    //     for(let j = 0; j < slices; j++) {
+    //         let theta = j * sliceAngle;
+    //         let x = center[0] + radius * Math.cos(theta) * Math.sin(phi);
+    //         let y = center[1] + radius * Math.cos(phi);
+    //         let z = center[2] + radius * Math.sin(phi) * Math.sin(theta);
+    //         let point = Vector4(x, y, z, 1);
+    //         vertices.push(point);
+    //     }
+    // }
+
+    // for(let i = 0; i < stacks; i++) {
+    //     for(let j = 0; j < slices; j++) {
+    //         edges.push([slices * i + j, slices * (i + 1) + j]);
+    //         edges.push([slices * i + j, slices * i + j + 1]);
+    //     }
+    // }
+
+    let dTheta = Math.PI / stacks;
+    let dPhi = 2 * Math.PI / slices;
+    let theta, phi = 0;
+    // x = r cos(phi) sin(theta)
+    // y = r sin(phi) sin(theta)
+    // z = r cos(theta)
+    for(let i = 0; i < stacks + 1; i++) { // needs i < stacks + 1 to close circles
+        let phi = i * dPhi; // go around from 0 to 2pi
+        // generate one slice of vertices
         for(let j = 0; j < slices; j++) {
-            let theta = j * sliceAngle;
-            let x = center[0] + radius * Math.cos(theta) * Math.sin(phi);
-            let y = center[1] + radius * Math.cos(phi);
-            let z = center[2] + radius * Math.sin(phi) * Math.sin(theta);
+            let theta = j * dTheta; // go up and down at each stack from 0 to pi
+            // each value is center in cartesian plus conversion from spherical coordinates
+            let x = center[0] + ( radius * Math.cos(phi) * Math.sin(theta) );
+            let y = center[1] + ( radius * Math.sin(phi) * Math.sin(theta) );
+            let z = center[2] + ( radius * Math.cos(theta) );
             let point = Vector4(x, y, z, 1);
             vertices.push(point);
+            theta += dTheta;
         }
+        console.log("ONE SLICE:", vertices, vertices.length);
     }
 
-    for(let i = 0; i < stacks; i++) {
-        for(let j = 0; j < slices; j++) {
-            edges.push([slices * i + j, slices * (i + 1) + j]);
-            edges.push([slices * i + j, slices * i + j + 1]);
+    for(let i = 0; i < stacks; i++) { // going around full circles
+        for(let j = 0; j < slices; j++) { // half circles
+            // each iteration of the inner loop needs to be offset by iterations of outer loop
+            // draw from current stack to next stack AND draw from current slice to next slice
+            let offset = slices * i;
+            edges.push( [ offset + j, slices * (i + 1) + j] ); // slices
+            edges.push( [ offset + j, slices * (i)] ); // stacks
         }
     }
 
@@ -897,7 +932,7 @@ function drawSliceCircle(center, radius, sides, vertices, edges) {
     circleEdges.push(offset);
     edges.push(circleEdges);
 }
-
+/*
 function draw2DCircle(centerOfCircle, sides, radius) {
     let vertices = [];
     let edges = [];
@@ -917,3 +952,4 @@ function draw2DCircle(centerOfCircle, sides, radius) {
     }
     return([vertices, edges]);
 }
+*/
