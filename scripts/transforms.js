@@ -2,7 +2,7 @@
 
 3D Projections (to earn a C: 45 pts)
 
-Implement perspective projection for 3D models: 35 pts DONE
+Implement perspective projection for 3D models: 35 pts - DONE
     Transform models into canonical view volume - DONE (Patrick 100%)
         Implement the matrix functions in transforms.js - DONE (Patrick 100%)
     Implement Cohen-Sutherland 3D line clipping - DONE (Patrick 90% and Zack 10%)
@@ -14,27 +14,26 @@ Implement camera movement to change the view of a scene: 10 pts
 
 Additional features (to earn a B or A)
 
-Implement parallel projection for 3D models: 5 pts 
-Follows same steps as perspective TODO: debug (Patrick and Zack)
+Implement parallel projection for 3D models: 5 pts - DONE
+Follows same steps as perspective (Patrick and Zack)
     Transform models into canonical view volume - DONE (Patrick 100%)
     Implement Cohen-Sutherland 3D line clipping - DONE (Patrick 60% and Zack 40%)
     Project onto view plane - DONE (Patrick 100%)
     Draw 2D lines - DONE (Zack 100%)
 Generate vertices and edges for common models: 5 pts
-    Cube: defined by center point, width, height, and depth (1 pt) (Patrick) TODO: finish and test feature
-    Cone: defined by center point of base, radius, height, and number of sides (1 pt) (Patrick) TODO: finish and test feature
-    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick) TODO: finish and test feature
-    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) () TODO: entire feature
+    Cube: defined by center point, width, height, and depth (1 pt) (Patrick 80% and Zack 20%)
+    Cone: defined by center point of base, radius, height, and number of sides (1 pt) (Patrick 10% and Zack 90%)
+    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick 70% and Zack 30%) 
+    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) (Patrick 25% Zack 75%) TODO: entire feature
 Allow for models to have a rotation animation: 5 pts
-    Can be about the x, y, or z axis () TODO: entire feature
-    Defined in terms of revolutions per second () TODO: entire feature
-Left/right arrow keys: rotate SRP around the v-axis with the PRP as the origin: 5 pts () TODO: entire feature
+    Can be about the x, y, or z axis (Zack 100%) TODO: entire feature
+    Defined in terms of revolutions per second (Zack 100%) TODO: entire feature
+Left/right arrow keys: rotate SRP around the v-axis with the PRP as the origin: 5 pts (Zack 100%) TODO: entire feature
 
 */
 
 // create a 4x4 matrix to the parallel projection / view matrix
 function mat4x4Parallel(prp, srp, vup, clip) {
-    // TODO: ZACK - debug / finish parallel projection
     /*
     PRP - projection reference point - used to calculate DOP
     SRP - scene reference point - center of scene
