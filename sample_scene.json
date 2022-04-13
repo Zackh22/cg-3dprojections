@@ -1,7 +1,7 @@
 {
     "view": {
         "type": "perspective",
-        "prp": [44, 20, -16],
+        "prp": [44, 25, -16],
         "srp": [20, 20, -40],
         "vup": [0, 1, 0],
         "clip": [-19, 5, -10, 8, 12, 100]
@@ -9,13 +9,46 @@
     "models": [
         {
             "type": "cube",
-            "center": [-10, 4, -10],
+            "center": [-30, 4, -10, 1],
             "width": 8,
             "height": 8,
             "depth": 8,
             "animation": {
                 "axis": "x",
-                "rps": "0.5"
+                "rps": 0.5
+            }
+        },
+        {
+            "type": "cylinder",
+            "center": [30, -5, 30],
+            "radius": 20.0,
+            "height": 15,
+            "sides": 25,
+            "animation": {
+                "axis": "x",
+                "rps": 0.5
+            }
+        },
+        {
+            "type": "cone",
+            "center": [-40, 10, 25],
+            "radius": 25.0,
+            "height": 40,
+            "sides": 25,
+            "animation": {
+                "axis": "y",
+                "rps": 0.5
+            }
+        },
+        {
+            "type": "sphere",
+            "center": [40, -5, -70],
+            "radius": 20,
+            "slices": 10,
+            "stacks": 10,
+            "animation": {
+                "axis": "z",
+                "rps": 0.5
             }
         }
     ]

@@ -25,7 +25,7 @@ function init() {
     scene = {
         view: {
             type: 'perspective',
-            prp: Vector3(44, 20, -16),
+            prp: Vector3(44, 25, -16),
             srp: Vector3(20, 20, -40),
             vup: Vector3(0, 1, 0),
             clip: [-19, 5, -10, 8, 12, 100]
@@ -56,20 +56,20 @@ function init() {
                 ],
                 matrix: new Matrix(4, 4)
             },
-            // {
-            //     type: "cube",
-            //     center: Vector4(-10, 4, -10, 1),
-            //     width: 8,
-            //     height: 8,
-            //     depth: 8,
-            //     animation: {
-            //         axis: "x",
-            //         rps: 0.5
-            //     }
-            // },
+            {
+                type: "cube",
+                center: Vector4(-30, 4, -10, 1),
+                width: 8,
+                height: 8,
+                depth: 8,
+                animation: {
+                    axis: "x",
+                    rps: 0.5
+                }
+            },
             // {
             //     type: "cylinder",
-            //     center: Vector4(50, -10, -49, 1),
+            //     center: Vector4(30, -5, 30, 1),
             //     radius: 20.0,
             //     height: 15,
             //     sides: 25,
@@ -80,7 +80,7 @@ function init() {
             // },
             // {
             //     type: "cone",
-            //     center: Vector4(-15, -5, -15, 1),
+            //     center: Vector4(-40, 10, 25, 1),
             //     radius: 25.0,
             //     height: 40,
             //     sides: 25,
@@ -89,18 +89,18 @@ function init() {
             //         rps: 0.5
             //     }
             // },
-            {
-                type: "sphere",
-                center: Vector4(20, 3, -30, 1),
-                radius: 20,
-                slices: 10,
-                stacks: 10,
-                animation: {
-                    axis: "z",
-                    axis: "z",
-                    rps: 0.5
-                }
-            }
+            // {
+            //     type: "sphere",
+            //     center: Vector4(40, -5, -70, 1),
+            //     radius: 20,
+            //     slices: 10,
+            //     stacks: 10,
+            //     animation: {
+            //         axis: "z",
+            //         axis: "z",
+            //         rps: 0.5
+            //     }
+            // }
         ]
     };
 
@@ -133,7 +133,7 @@ function animate(timestamp) {
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
 
-    //window.requestAnimationFrame(animate);
+    window.requestAnimationFrame(animate);
 }
 
 // Main drawing code - use information contained in variable `scene`
@@ -203,8 +203,8 @@ function drawScene() {
             currentModel.vertices = output[0];
             currentModel.edges = output[1];
         } else if(currentModel.type == "sphere") {
-            //let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
-            let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
+            let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
+            //let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
             console.log("test",output);
             currentModel.vertices = output[0];
             currentModel.edges = output[1];
@@ -745,7 +745,7 @@ function drawSphere(center, radius, slices, stacks) {
         let angle = Math.acos(currentHeight / radius);
         let currentRadius = Math.tan(angle) * currentHeight;
         if(currentRadius == 0) currentRadius = radius; // get middle circle to draw
-        let circleCenter = [center[0], center[1] + currentHeight, center[2]];
+        let circleCenter = [center.x, center.y + currentHeight, center.z];
         drawStackCircle(circleCenter, currentRadius, sides, vertices, edges);
     }
 
@@ -764,12 +764,11 @@ function drawSphere(center, radius, slices, stacks) {
 
 function drawStackCircle(center, radius, sides, vertices, edges) {
     let offset = vertices.length;
-
     // circle vertices
     for(let i = 0; i < sides; i++) {
-        let x = Math.cos(2 * i * Math.PI / sides) * radius + center.x;
-        let z = Math.sin(2 * i * Math.PI / sides) * radius + center.z;
-        vertices.push(Vector4(x, center.y, z, 1));
+        let x = Math.cos(2 * i * Math.PI / sides) * radius + center[0];
+        let z = Math.sin(2 * i * Math.PI / sides) * radius + center[2];
+        vertices.push(Vector4(x, center[1], z, 1));
     }
     // circle edges
     let circleEdges = [];
@@ -782,12 +781,11 @@ function drawStackCircle(center, radius, sides, vertices, edges) {
 
 function drawSliceCircle(center, radius, sides, vertices, edges) {
     let offset = vertices.length;
-
     // circle vertices
     for(let i = 0; i < sides; i++) {
-        let x = Math.cos(2 * i * Math.PI / sides) * radius + center.x;
-        let y = Math.sin(2 * i * Math.PI / sides) * radius + center.y;
-        vertices.push(Vector4(x, y, center.z, 1));
+        let x = Math.cos(2 * i * Math.PI / sides) * radius + center[0];
+        let y = Math.sin(2 * i * Math.PI / sides) * radius + center[1];
+        vertices.push(Vector4(x, y, center[2], 1));
     }
     // circle edges
     let circleEdges = [];
