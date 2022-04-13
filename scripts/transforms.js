@@ -98,7 +98,6 @@ function mat4x4Parallel(prp, srp, vup, clip) {
 
     // npar = shpar * tpar * shpar * R * T(-PRP)
     let transform = Matrix.multiply([scale, Tpar, shpar, R, translate]);
-    console.log("TRANSFORM MATRIX RESULT: ", transform);
     return transform;
 }
 

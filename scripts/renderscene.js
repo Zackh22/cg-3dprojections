@@ -147,12 +147,17 @@ function init() {
         ]
     };
 
+    if(scene == null){
+        loadNewScene();
+    }
+
     // event handler for pressing arrow keys
     document.addEventListener('keydown', onKeyDown, false);
     
     // start animation loop
     start_time = performance.now(); // current timestamp in milliseconds
     window.requestAnimationFrame(animate);
+    console.log(scene);
 }
 
 
@@ -165,64 +170,65 @@ function animate(timestamp) {
     // step 2: transform models based on time
     // TODO: implement this!
 
-    for(let i = 0; i < scene.models.length; i++) {
-        let currentModel = scene.models[i];
-        let rotationMatrix = new Matrix(4,4);
-        if(scene.models[i].animation == undefined) continue; // check if model has an animation
-        let theta = (2 * Math.PI) * currentModel.animation.rps * time / 1000;
+    // for(let i = 0; i < scene.models.length; i++) {
+    //     let currentModel = scene.models[i];
+    //     let rotationMatrix = new Matrix(4,4);
+    //     if(scene.models[i].animation == undefined) continue; // check if model has an animation
+    //     let theta = (2 * Math.PI) * currentModel.animation.rps * time / 1000;
 
-        let axis = currentModel.animation.axis;
-        switch(axis) {
-            case 'x':
-                Mat4x4RotateX(rotationMatrix, theta);
-                console.log("RotMat: ", rotationMatrix)
-                break;
-            case 'y':
-                Mat4x4RotateY(rotationMatrix, theta);
-                break;
-            case 'z':
-                Mat4x4RotateZ(rotationMatrix, theta);
-                break;
-        }
-    }
+    //     let axis = currentModel.animation.axis;
+    //     switch(axis) {
+    //         case 'x':
+    //             Mat4x4RotateX(rotationMatrix, theta);
+    //             console.log("RotMat: ", rotationMatrix)
+    //             break;
+    //         case 'y':
+    //             Mat4x4RotateY(rotationMatrix, theta);
+    //             break;
+    //         case 'z':
+    //             Mat4x4RotateZ(rotationMatrix, theta);
+    //             break;
+    //     }
+    // }
 
-    for(let i = 0; i < scene.models.length; i++) { // loop through all models
-        let currentModel = scene.models[i];
-        // check if the model has an animation parameter
-        if(currentModel.animation == undefined) continue;
-        let modelRPS = currentModel.animation.rps;
-        let animation = currentModel.animation;
-        let angle = (2 * Math.PI) * modelRPS * time;
+    // for(let i = 0; i < scene.models.length; i++) { // loop through all models
+    //     let currentModel = scene.models[i];
+    //     // check if the model has an animation parameter
+    //     if(currentModel.animation == undefined) continue;
+    //     let modelRPS = currentModel.animation.rps;
+    //     let animation = currentModel.animation;
+    //     let angle = (2 * Math.PI) * modelRPS * time;
 
-        let xCenter = currentModel.center.x;
-        let yCenter = currentModel.center.y;
-        let zCenter = currentModel.center.z;
+    //     let xCenter = currentModel.center.x;
+    //     let yCenter = currentModel.center.y;
+    //     let zCenter = currentModel.center.z;
         
-        let rotateAround = currentModel.animation.axis;
-        let toOrigin = new Matrix(4,4);
-        //Mat4x4Translate(toOrigin, -xCenter, -yCenter, -zCenter); // translate model to origin
+    //     let rotateAround = currentModel.animation.axis;
+    //     let toOrigin = new Matrix(4,4);
+    //     //Mat4x4Translate(toOrigin, -xCenter, -yCenter, -zCenter); // translate model to origin
 
-        let rotate = new Matrix(4,4);
-        if(rotateAround == "x"){
-            Mat4x4RotateX(rotate, angle);
-        } else if(rotateAround == "y"){
-            Mat4x4RotateY(rotate, angle);
-        } else if(rotateAround == "z"){
-            Mat4x4RotateZ(rotate, angle);
-        }
+    //     let rotate = new Matrix(4,4);
+    //     if(rotateAround == "x"){
+    //         Mat4x4RotateX(rotate, angle);
+    //     } else if(rotateAround == "y"){
+    //         Mat4x4RotateY(rotate, angle);
+    //     } else if(rotateAround == "z"){
+    //         Mat4x4RotateZ(rotate, angle);
+    //     }
 
-        // let backToLocation = new Matrix(4,4);
-        // Mat4x4Translate(backToLocation, xCenter, yCenter, zCenter);
-        // currentModel.animation.animationMatrix = Matrix.multiply([backToLocation, rotate, toOrigin]); // give the model a parameter to hold the matrix
+    //     // let backToLocation = new Matrix(4,4);
+    //     // Mat4x4Translate(backToLocation, xCenter, yCenter, zCenter);
+    //     // currentModel.animation.animationMatrix = Matrix.multiply([backToLocation, rotate, toOrigin]); // give the model a parameter to hold the matrix
 
         
-    }
+    // }
 
     // step 3: draw scene
     drawScene();
 
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
+    console.log("TEST");
 
     //window.requestAnimationFrame(animate);
 }
@@ -637,57 +643,6 @@ function onKeyDown(event) {
     drawScene();
 }
 
-///////////////////////////////////////////////////////////////////////////
-// No need to edit functions beyond this point
-///////////////////////////////////////////////////////////////////////////
-
-// Called when user selects a new scene JSON file
-function loadNewScene() {
-    let scene_file = document.getElementById('scene_file');
-
-    console.log(scene_file.files[0]);
-
-    let reader = new FileReader();
-    reader.onload = (event) => {
-        scene = JSON.parse(event.target.result);
-        scene.view.prp = Vector3(scene.view.prp[0], scene.view.prp[1], scene.view.prp[2]);
-        scene.view.srp = Vector3(scene.view.srp[0], scene.view.srp[1], scene.view.srp[2]);
-        scene.view.vup = Vector3(scene.view.vup[0], scene.view.vup[1], scene.view.vup[2]);
-
-        for (let i = 0; i < scene.models.length; i++) {
-            if (scene.models[i].type === 'generic') {
-                for (let j = 0; j < scene.models[i].vertices.length; j++) {
-                    scene.models[i].vertices[j] = Vector4(scene.models[i].vertices[j][0],
-                                                          scene.models[i].vertices[j][1],
-                                                          scene.models[i].vertices[j][2],
-                                                          1);
-                }
-            }
-            else {
-                scene.models[i].center = Vector4(scene.models[i].center[0],
-                                                 scene.models[i].center[1],
-                                                 scene.models[i].center[2],
-                                                 1);
-            }
-            scene.models[i].matrix = new Matrix(4, 4);
-        }
-    };
-    reader.readAsText(scene_file.files[0], 'UTF-8');
-}
-
-// Draw black 2D line with red endpoints 
-function drawLine(x1, y1, x2, y2) {
-    ctx.strokeStyle = '#000000';
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-
-    ctx.fillStyle = '#FF0000';
-    ctx.fillRect(x1 - 2, y1 - 2, 4, 4);
-    ctx.fillRect(x2 - 2, y2 - 2, 4, 4);
-}
-
 ///////////////////////////////////////////////////////////////////////////////////
 // SHAPE DRAWING FUNCTIONS                                                         //
 ///////////////////////////////////////////////////////////////////////////////////
@@ -943,4 +898,55 @@ function drawSliceCircle(center, radius, sides, vertices, edges) {
     }
     circleEdges.push(offset);
     edges.push(circleEdges);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// No need to edit functions beyond this point
+///////////////////////////////////////////////////////////////////////////
+
+// Called when user selects a new scene JSON file
+function loadNewScene() {
+    let scene_file = document.getElementById('scene_file');
+
+    console.log(scene_file.files[0]);
+
+    let reader = new FileReader();
+    reader.onload = (event) => {
+        scene = JSON.parse(event.target.result);
+        scene.view.prp = Vector3(scene.view.prp[0], scene.view.prp[1], scene.view.prp[2]);
+        scene.view.srp = Vector3(scene.view.srp[0], scene.view.srp[1], scene.view.srp[2]);
+        scene.view.vup = Vector3(scene.view.vup[0], scene.view.vup[1], scene.view.vup[2]);
+
+        for (let i = 0; i < scene.models.length; i++) {
+            if (scene.models[i].type === 'generic') {
+                for (let j = 0; j < scene.models[i].vertices.length; j++) {
+                    scene.models[i].vertices[j] = Vector4(scene.models[i].vertices[j][0],
+                                                          scene.models[i].vertices[j][1],
+                                                          scene.models[i].vertices[j][2],
+                                                          1);
+                }
+            }
+            else {
+                scene.models[i].center = Vector4(scene.models[i].center[0],
+                                                 scene.models[i].center[1],
+                                                 scene.models[i].center[2],
+                                                 1);
+            }
+            scene.models[i].matrix = new Matrix(4, 4);
+        }
+    };
+    reader.readAsText(scene_file.files[0], 'UTF-8');
+}
+
+// Draw black 2D line with red endpoints 
+function drawLine(x1, y1, x2, y2) {
+    ctx.strokeStyle = '#000000';
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#FF0000';
+    ctx.fillRect(x1 - 2, y1 - 2, 4, 4);
+    ctx.fillRect(x2 - 2, y2 - 2, 4, 4);
 }
