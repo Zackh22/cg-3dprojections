@@ -163,14 +163,13 @@ function animate(timestamp) {
     let time = timestamp - start_time;
 
     // step 2: transform models based on time
-
+    
 
     // step 3: draw scene
     drawScene();
 
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
-
     window.requestAnimationFrame(animate);
 }
 
@@ -198,19 +197,19 @@ function drawScene() {
     
     // For each model, for each edge
 
-    let m, n; // declaring here to avoid scope issues - gets value based on sceneType;
+    let transform, project; // declaring here to avoid scope issues - gets value based on sceneType;
 
     if(sceneType == "perspective") {
         // perspective
         // general perspective projection: Nper = Sperh * SHpar * R * T(-PRP)   (09 - 3D Projections Part 2 slide 23)
-        m = mat4x4MPer();
-        n = mat4x4Perspective(prp, srp, vup, clip);
+        transform = mat4x4Perspective(prp, srp, vup, clip);
+        project = mat4x4MPer();
 
     } else {
         // parallel or assumed parallel if not defined
 
-        m = mat4x4MPar();
-        n = mat4x4Parallel(prp, srp, vup, clip);
+        transform = mat4x4Parallel(prp, srp, vup, clip);
+        project = mat4x4MPar();
 
         // general parallel projection: Npar = Spar * Tpar * SHpar * R * T(-PRP)    (09 - 3D Projections Part 2 slide 15)
     }
@@ -222,53 +221,26 @@ function drawScene() {
     for(let i = 0; i < scene.models.length; i++) { // loop through all models
         let currentModel = scene.models[i];
 
-        //Matrix.multiply(n, currentModel.animationMatrix);
-        
-        // generate vertices and edges arrays for shape types
-
-//**************************************************************************************************************************************************************** */
-
-        // if(currentModel.type == "cube") {
-        //     let output = drawCube(currentModel.center, currentModel.width, currentModel.height, currentModel.depth, 0.0, 0.0);
-        //     // output of drawCube is [vertices, edges]
-        //     currentModel.vertices = output[0];
-        //     currentModel.edges = output[1];
-        // } else if(currentModel.type == "cone") {
-        //     console.log("cone");
-        //     let output = drawCone(currentModel.center, currentModel.radius, currentModel.height, currentModel.sides, 0.0, 0.0);
-        //     currentModel.vertices = output[0];
-        //     currentModel.edges = output[1];
-        // } else if(currentModel.type == "cylinder") {
-        //     let output = drawCylinder(currentModel.center, currentModel.radius, currentModel.height, currentModel.sides);
-        //     currentModel.vertices = output[0];
-        //     currentModel.edges = output[1];
-        // } else if(currentModel.type == "sphere") {
-        //     let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
-        //     //let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
-        //     currentModel.vertices = output[0];
-        //     currentModel.edges = output[1];
-        // }
-
-        let verts = [];
-        for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model            
-            verts.push(Matrix.multiply([ n, scene.models[i].vertices[j] ]));
+        // transfcorm to canonical view volume
+        let verts = []; // array to hold transformed vertices
+        for(let j = 0; j < currentModel.vertices.length; j++) { // loop through the vertices in the current model            
+            let tempVert = Matrix.multiply([ transform, currentModel.vertices[j] ]);
+            tempVert.x = tempVert.x / tempVert.w;
+            tempVert.y = tempVert.y / tempVert.w;
+            verts.push(tempVert);
         }        
 
-        for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
-            for(let k = 1; k < scene.models[i].edges[j].length; k++) { // loop through vertex indices
+        for(let j = 0; j < currentModel.edges.length; j++) { // loop through all edge arrays
+            for(let k = 0; k < currentModel.edges[j].length - 1; k++) { // loop through vertex indices
 
                 // assign two vertex indices
-                let idx0 = scene.models[i].edges[j][k - 1];
-                let idx1 = scene.models[i].edges[j][k];
+                let idx0 = currentModel.edges[j][k];
+                let idx1 = currentModel.edges[j][k + 1];
                 // assign two vertices using the indices
                 let vert0 = verts[idx0];
                 let vert1 = verts[idx1];
 
-
                 // create a line between them to be clipped
-                //let tempLine = {pt0: vert0, pt1: vert1};
-                // vert0 = Vector4(verts[idx0].x, verts[idx0].y, verts[idx0].z, 1);
-                // vert1 = Vector4(verts[idx1].x, verts[idx1].y, verts[idx1].z, 1);
                 let tempLine = {pt0: vert0, pt1: vert1};
 
                 // clip the line based on view type
@@ -281,19 +253,16 @@ function drawScene() {
 
                 // draw the clipped line
 
-                if (clippedLine != null) { // if line is null it was entirely out of view
-                    // transform the clipped lines using the w-values
+                if (clippedLine != null) { // if line is null it was entirely out of view   
                     
-                    // point0 = new Vector4(clippedLine.pt0.x, clippedLine.pt0.y, clippedLine.pt0.z, vert0.w);
-                    // point1 = new Vector4(clippedLine.pt1.x, clippedLine.pt1.y, clippedLine.pt1.z, vert1.w);
-
-                    var drawPt0 = Matrix.multiply([ window, m, clippedLine.pt0 ]);
-                    var drawPt1 = Matrix.multiply([ window, m, clippedLine.pt1 ]);
+                    // project to 2D
+                    var drawPt0 = Matrix.multiply([ window, project, clippedLine.pt0 ]);
+                    var drawPt1 = Matrix.multiply([ window, project, clippedLine.pt1 ]);
                     drawPt0.x = drawPt0.x / drawPt0.w;
                     drawPt0.y = drawPt0.y / drawPt0.w;
                     drawPt1.x = drawPt1.x / drawPt1.w;
                     drawPt1.y = drawPt1.y / drawPt1.w;
-
+                    // draw 2D line
                     drawLine( ( drawPt0.x ), ( drawPt0.y ), ( drawPt1.x ), ( drawPt1.y ));
 
                 }
@@ -867,6 +836,7 @@ function createModelVertsAndEdges() {
             currentModel.edges = output[1];
         }
     }
+    drawScene();
 }
 
 ///////////////////////////////////////////////////////////////////////////

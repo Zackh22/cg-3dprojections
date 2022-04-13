@@ -12,7 +12,11 @@
             "center": [-10, 4, -10],
             "width": 8,
             "height": 8,
-            "depth": 8
+            "depth": 8,
+            "animation": {
+                "axis": "x",
+                "rps": "0.5"
+            }
         }
     ]
 }
