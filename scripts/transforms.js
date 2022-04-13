@@ -21,13 +21,13 @@ Follows same steps as perspective (Patrick and Zack)
     Project onto view plane - DONE (Patrick 100%)
     Draw 2D lines - DONE (Zack 100%)
 Generate vertices and edges for common models: 5 pts
-    Cube: defined by center point, width, height, and depth (1 pt) (Patrick 80% and Zack 20%)
-    Cone: defined by center point of base, radius, height, and number of sides (1 pt) (Patrick 10% and Zack 90%)
-    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick 75% and Zack 25%) 
-    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) (Patrick 40% Zack 60%)
+    Cube: defined by center point, width, height, and depth (1 pt) (Patrick 80% and Zack 20%) - DONE
+    Cone: defined by center point of base, radius, height, and number of sides (1 pt) (Patrick 10% and Zack 90%) - DONE
+    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick 75% and Zack 25%) - DONE
+    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) (Patrick 40% Zack 60%) - DONE
 Allow for models to have a rotation animation: 5 pts
-    Can be about the x, y, or z axis (Zack 100%) TODO: entire feature
-    Defined in terms of revolutions per second (Zack 100%) TODO: entire feature
+    Can be about the x, y, or z axis (Patrick 10% and Zack 90%) - DONE
+    Defined in terms of revolutions per second (Zack 100%) - DONE
 Left/right arrow keys: rotate SRP around the v-axis with the PRP as the origin: 5 pts (Patrick 85% and Zack 15%) - DONE
 
 */

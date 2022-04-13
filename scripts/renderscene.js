@@ -67,17 +67,17 @@ function init() {
                     rps: 0.5
                 }
             },
-            // {
-            //     type: "cylinder",
-            //     center: Vector4(30, -5, 30, 1),
-            //     radius: 20.0,
-            //     height: 15,
-            //     sides: 25,
-            //     animation: {
-            //         axis: "y",
-            //         rps: 0.5
-            //     }
-            // },
+            {
+                type: "cylinder",
+                center: Vector4(30, -5, 30, 1),
+                radius: 20.0,
+                height: 15,
+                sides: 25,
+                animation: {
+                    axis: "y",
+                    rps: 0.5
+                }
+            },
             {
                 type: "cone",
                 center: Vector4(-40, 10, 25, 1),
@@ -86,20 +86,20 @@ function init() {
                 sides: 25,
                 animation: {
                     axis: "y",
-                    rps: 0.25
+                    rps: 0.5
+                }
+            },
+            {
+                type: "sphere",
+                center: Vector4(40, -5, -70, 1),
+                radius: 20,
+                slices: 10,
+                stacks: 10,
+                animation: {
+                    axis: "z",
+                    rps: 1
                 }
             }
-            // {
-            //     type: "sphere",
-            //     center: Vector4(40, -5, -70, 1),
-            //     radius: 20,
-            //     slices: 10,
-            //     stacks: 10,
-            //     animation: {
-            //         axis: "z",
-            //         rps: 1
-            //     }
-            // }
         ]
     };
 
@@ -207,32 +207,6 @@ function drawScene() {
     //  * draw line
 
     for(let i = 0; i < scene.models.length; i++) { // loop through all models
-        let currentModel = scene.models[i];
-
-        //Matrix.multiply(n, currentModel.animationMatrix);
-        
-        // generate vertices and edges arrays for shape types
-
-        if(currentModel.type == "cube") {
-            let output = drawCube(currentModel.center, currentModel.width, currentModel.height, currentModel.depth, 0.0, 0.0);
-            // output of drawCube is [vertices, edges]
-            currentModel.vertices = output[0];
-            currentModel.edges = output[1];
-        } else if(currentModel.type == "cone") {
-            let output = drawCone(currentModel.center, currentModel.radius, currentModel.height, currentModel.sides, 0.0, 0.0);
-            currentModel.vertices = output[0];
-            currentModel.edges = output[1];
-        } else if(currentModel.type == "cylinder") {
-            let output = drawCylinder(currentModel.center, currentModel.radius, currentModel.height, currentModel.sides);
-            currentModel.vertices = output[0];
-            currentModel.edges = output[1];
-        } else if(currentModel.type == "sphere") {
-            let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
-            //let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
-            console.log("test",output);
-            currentModel.vertices = output[0];
-            currentModel.edges = output[1];
-        }
 
         let verts = [];
         for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model            
