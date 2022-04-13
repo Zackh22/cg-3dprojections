@@ -74,21 +74,21 @@ function init() {
             //     height: 15,
             //     sides: 25,
             //     animation: {
-            //         axis: "x",
-            //         rps: 0.5
-            //     }
-            // },
-            // {
-            //     type: "cone",
-            //     center: Vector4(-40, 10, 25, 1),
-            //     radius: 25.0,
-            //     height: 40,
-            //     sides: 25,
-            //     animation: {
             //         axis: "y",
             //         rps: 0.5
             //     }
             // },
+            {
+                type: "cone",
+                center: Vector4(-40, 10, 25, 1),
+                radius: 10,
+                height: 20,
+                sides: 25,
+                animation: {
+                    axis: "y",
+                    rps: 0.25
+                }
+            }
             // {
             //     type: "sphere",
             //     center: Vector4(40, -5, -70, 1),
@@ -97,8 +97,7 @@ function init() {
             //     stacks: 10,
             //     animation: {
             //         axis: "z",
-            //         axis: "z",
-            //         rps: 0.5
+            //         rps: 1
             //     }
             // }
         ]
@@ -123,6 +122,31 @@ function animate(timestamp) {
     ctx.clearRect(0, 0, view.width, view.height);
     // step 1: calculate time (time since start)
     let time = timestamp - start_time;
+    let numModels = scene.models.length;
+    console.log(numModels);
+    let theta;
+
+    scene.models.forEach(currentModel =>{
+        if(currentModel.matrix == null) {
+            currentModel.matrix = new Matrix(4,4);
+        }
+        console.log(currentModel);
+        //console.log(currentModel.type);
+        generateModels();
+        if(currentModel.animation != null) {
+            //time is in milliseconds need to convert to seconds
+            theta = (currentModel.animation.rps * 2) * time/1000;
+            if(currentModel.animation.axis == "x") {
+                Mat4x4RotateX(currentModel.matrix, theta);
+            } else if(currentModel.animation.axis == "y") {
+                Mat4x4RotateY(currentModel.matrix, theta);
+
+            } else if(currentModel.animation.axis == "z") {
+                Mat4x4RotateZ(currentModel.matrix, theta);
+            }   
+        }
+        
+    });
 
     // step 2: transform models based on time
 
@@ -212,7 +236,9 @@ function drawScene() {
 
         let verts = [];
         for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model            
-            verts.push(Matrix.multiply([ n, scene.models[i].vertices[j] ]));
+            // verts.push(Matrix.multiply([ n, scene.models[i].vertices[j] ]));
+            let tempVert = Matrix.multiply([ n, scene.models[i].matrix, scene.models[i].vertices[j] ]);
+            verts.push( tempVert );
         }        
 
         for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
@@ -730,8 +756,8 @@ function drawSphereBetter(center, radius, slices, stacks) {
 
 function drawSphere(center, radius, slices, stacks) {
     console.log("drawSphere");
-    stacks = 15;
-    slices = 15;
+    // stacks = 15;
+    // slices = 15;
     let vertices = [];
     let edges = [];
     let sides = 25;
@@ -798,7 +824,7 @@ function drawSliceCircle(center, radius, sides, vertices, edges) {
 
 function generateModels() {
     for(let i = 0; i < scene.models.length; i++) {
-        console.clear();
+        //console.clear();
         let currentModel = scene.models[i];
         if(currentModel.type == "cube") {
             let output = drawCube(currentModel.center, currentModel.width, currentModel.height, currentModel.depth, 0, 0);
