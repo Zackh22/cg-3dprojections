@@ -75,42 +75,42 @@ function init() {
             
         },
         models: [
-            // {
-            //     type: 'generic',
-            //     vertices: [
-            //         Vector4( 0,  0, -30, 1),
-            //         Vector4(20,  0, -30, 1),
-            //         Vector4(20, 12, -30, 1),
-            //         Vector4(10, 20, -30, 1),
-            //         Vector4( 0, 12, -30, 1),
-            //         Vector4( 0,  0, -60, 1),
-            //         Vector4(20,  0, -60, 1),
-            //         Vector4(20, 12, -60, 1),
-            //         Vector4(10, 20, -60, 1),
-            //         Vector4( 0, 12, -60, 1)
-            //     ],
-            //     edges: [
-            //         [0, 1, 2, 3, 4, 0],
-            //         [5, 6, 7, 8, 9, 5],
-            //         [0, 5],
-            //         [1, 6],
-            //         [2, 7],
-            //         [3, 8],
-            //         [4, 9]
-            //     ],
-            //     matrix: new Matrix(4, 4)
-            // },
-            // {
-            //     type: "cube",
-            //     center: [-10, 4, -10],
-            //     width: 8,
-            //     height: 8,
-            //     depth: 8,
-            //     animation: {
-            //         axis: "y",
-            //         rps: 0.5
-            //     }
-            // },
+            {
+                type: 'generic',
+                vertices: [
+                    Vector4( 0,  0, -30, 1),
+                    Vector4(20,  0, -30, 1),
+                    Vector4(20, 12, -30, 1),
+                    Vector4(10, 20, -30, 1),
+                    Vector4( 0, 12, -30, 1),
+                    Vector4( 0,  0, -60, 1),
+                    Vector4(20,  0, -60, 1),
+                    Vector4(20, 12, -60, 1),
+                    Vector4(10, 20, -60, 1),
+                    Vector4( 0, 12, -60, 1)
+                ],
+                edges: [
+                    [0, 1, 2, 3, 4, 0],
+                    [5, 6, 7, 8, 9, 5],
+                    [0, 5],
+                    [1, 6],
+                    [2, 7],
+                    [3, 8],
+                    [4, 9]
+                ],
+                matrix: new Matrix(4, 4)
+            },
+            {
+                type: "cube",
+                center: [-10, 4, -10],
+                width: 8,
+                height: 8,
+                depth: 8,
+                animation: {
+                    axis: "x",
+                    rps: 0.5
+                }
+            }
             // {
             //     type: "cylinder",
             //     center: [50, -10, -49],
@@ -118,7 +118,7 @@ function init() {
             //     height: 15,
             //     sides: 25,
             //     animation: {
-            //         axis: "y",
+            //         axis: "x",
             //         rps: 0.5
             //     }
             // },
@@ -133,17 +133,17 @@ function init() {
             //         rps: 0.5
             //     }
             // },
-            {
-                type: "sphere",
-                center: [20, 3, -30],
-                radius: 20,
-                slices: 10,
-                stacks: 10,
-                animation: {
-                    axis: "y",
-                    rps: 0.5
-                }
-            }
+            // {
+            //     type: "sphere",
+            //     center: [20, 3, -30],
+            //     radius: 20,
+            //     slices: 10,
+            //     stacks: 10,
+            //     animation: {
+            //         axis: "z",
+            //         rps: 0.5
+            //     }
+            // }
         ]
     };
 
@@ -155,44 +155,90 @@ function init() {
     window.requestAnimationFrame(animate);
 }
 
+
+
 // Animation loop - repeatedly calls rendering code
 function animate(timestamp) {
-    // step 1: calculate time (time since start) 
+    // step 1: calculate time (time since start)
     let time = timestamp - start_time;
-    
+
     // step 2: transform models based on time
     // TODO: implement this!
+
+    for(let i = 0; i < scene.models.length; i++) {
+        let currentModel = scene.models[i];
+        let rotationMatrix = new Matrix(4,4);
+        if(scene.models[i].animation == undefined) continue; // check if model has an animation
+        let theta = (2 * Math.PI) * currentModel.animation.rps * time / 1000;
+
+        let axis = currentModel.animation.axis;
+        switch(axis) {
+            case 'x':
+                Mat4x4RotateX(rotationMatrix, theta);
+                console.log("RotMat: ", rotationMatrix)
+                break;
+            case 'y':
+                Mat4x4RotateY(rotationMatrix, theta);
+                break;
+            case 'z':
+                Mat4x4RotateZ(rotationMatrix, theta);
+                break;
+        }
+    }
+
+    for(let i = 0; i < scene.models.length; i++) { // loop through all models
+        let currentModel = scene.models[i];
+        // check if the model has an animation parameter
+        if(currentModel.animation == undefined) continue;
+        let modelRPS = currentModel.animation.rps;
+        let animation = currentModel.animation;
+        let angle = (2 * Math.PI) * modelRPS * time;
+
+        let xCenter = currentModel.center.x;
+        let yCenter = currentModel.center.y;
+        let zCenter = currentModel.center.z;
+        
+        let rotateAround = currentModel.animation.axis;
+        let toOrigin = new Matrix(4,4);
+        //Mat4x4Translate(toOrigin, -xCenter, -yCenter, -zCenter); // translate model to origin
+
+        let rotate = new Matrix(4,4);
+        if(rotateAround == "x"){
+            Mat4x4RotateX(rotate, angle);
+        } else if(rotateAround == "y"){
+            Mat4x4RotateY(rotate, angle);
+        } else if(rotateAround == "z"){
+            Mat4x4RotateZ(rotate, angle);
+        }
+
+        // let backToLocation = new Matrix(4,4);
+        // Mat4x4Translate(backToLocation, xCenter, yCenter, zCenter);
+        // currentModel.animation.animationMatrix = Matrix.multiply([backToLocation, rotate, toOrigin]); // give the model a parameter to hold the matrix
+
+        
+    }
 
     // step 3: draw scene
     drawScene();
 
     // step 4: request next animation frame (recursively calling same function)
     // (may want to leave commented out while debugging initially)
+
     //window.requestAnimationFrame(animate);
 }
 
 // Main drawing code - use information contained in variable `scene`
 function drawScene() {
     // clear previous frame
-    console.clear();
+    //console.clear();
     ctx.clearRect(0, 0, view.width, view.height);
-    /*
-    console.log(scene); // print the scene
-    console.log(scene.models.length); // print the number of models
-    console.log(scene.models);
-    console.log(scene.models[0].vertices.length);
-    */
 
     let sceneType = scene.view.type;
     let modelLength = scene.models.length;
     let prp = scene.view.prp;
-    //console.log(prp);
     let srp = scene.view.srp;
-    //console.log(srp);
     let vup = scene.view.vup;
-    //console.log(vup);
     let clip = scene.view.clip;
-    //console.log(clip);
 
     let width = view.width;
     let height = view.height;
@@ -212,6 +258,7 @@ function drawScene() {
         // general perspective projection: Nper = Sperh * SHpar * R * T(-PRP)   (09 - 3D Projections Part 2 slide 23)
         m = mat4x4MPer();
         n = mat4x4Perspective(prp, srp, vup, clip);
+
     } else {
         // parallel or assumed parallel if not defined
 
@@ -228,6 +275,8 @@ function drawScene() {
     for(let i = 0; i < scene.models.length; i++) { // loop through all models
         let currentModel = scene.models[i];
 
+        //Matrix.multiply(n, currentModel.animationMatrix);
+        
         // generate vertices and edges arrays for shape types
 
         if(currentModel.type == "cube") {
@@ -245,15 +294,15 @@ function drawScene() {
             currentModel.vertices = output[0];
             currentModel.edges = output[1];
         } else if(currentModel.type == "sphere") {
-            // let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
-            let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
+            let output = drawSphere(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
+            //let output = drawSphereBetter(currentModel.center, currentModel.radius, currentModel.slices, currentModel.stacks);
             currentModel.vertices = output[0];
             currentModel.edges = output[1];
         }
 
         let verts = [];
         for(let j = 0; j < scene.models[i].vertices.length; j++) { // loop through the vertices in the current model            
-            verts.push(Matrix.multiply([ n , scene.models[i].vertices[j] ]));
+            verts.push(Matrix.multiply([ n, scene.models[i].vertices[j] ]));
         }        
 
         for(let j = 0; j < scene.models[i].edges.length; j++) { // loop through all edge arrays
@@ -265,6 +314,7 @@ function drawScene() {
                 // assign two vertices using the indices
                 let vert0 = verts[idx0];
                 let vert1 = verts[idx1];
+
 
                 // create a line between them to be clipped
                 //let tempLine = {pt0: vert0, pt1: vert1};
@@ -550,78 +600,41 @@ function onKeyDown(event) {
     let costTheta = Math.cos(theta);
     let sinTheta = Math.sin(theta);
 
-    let srp;
-    let t1, t2, rx, ry, rz = new Matrix(4, 4);
-
-    if(scene.view.type == "perspective") {
-        switch (event.keyCode) {
-            case 37: // LEFT Arrow
-                console.log("left");
-                break;
-            case 39: // RIGHT Arrow
-                console.log("right");    
-                break;
-            case 65: // A key
-                console.log("A");
-                scene.view.prp = scene.view.prp.subtract(u);
-                scene.view.srp = scene.view.srp.subtract(u);
-                drawScene();
-                break;
-            case 68: // D key
-                console.log("D");
-                scene.view.prp = scene.view.prp.add(u);
-                scene.view.srp = scene.view.srp.add(u);
-                drawScene();
-                break;
-            case 83: // S key
-                console.log("S");
-                scene.view.prp = scene.view.prp.add(n);
-                scene.view.srp = scene.view.srp.add(n);
-                drawScene();
-                break;
-            case 87: // W key
-                console.log("W");
-                scene.view.prp = scene.view.prp.subtract(n);
-                scene.view.srp = scene.view.srp.subtract(n);
-                drawScene();
-                break;
-        }
-    } else { // parallel or assumed parallel if undefined
-        switch (event.keyCode) {
-            case 37: // LEFT Arrow
-                console.log("left");
-                break;
-            case 39: // RIGHT Arrow
-                console.log("right");    
-                break;
-            case 65: // A key
-                console.log("A");
-                scene.view.prp = scene.view.prp.subtract(u);
-                scene.view.srp = scene.view.srp.subtract(u);
-                drawScene();
-                break;
-            case 68: // D key
-                console.log("D");
-                scene.view.prp = scene.view.prp.add(u);
-                scene.view.srp = scene.view.srp.add(u);
-                drawScene();
-                break;
-            case 83: // S key
-                console.log("S");
-                scene.view.prp = scene.view.prp.add(n);
-                scene.view.srp = scene.view.srp.add(n);
-                drawScene();
-                break;
-            case 87: // W key
-                console.log("W");
-                scene.view.prp = scene.view.prp.subtract(n);
-                scene.view.srp = scene.view.srp.subtract(n);
-                drawScene();
-                break;
-        }
-    }
-
+    let srp = scene.view.srp;
+    let prp = scene.view.prp;
     
+    switch (event.keyCode) {
+        case 37: // LEFT Arrow
+            console.log("left");
+            scene.view.srp = scene.view.srp.subtract(u);
+            break;
+        case 39: // RIGHT Arrow
+            console.log("right");
+            scene.view.srp = scene.view.srp.add(u);
+            break;
+        case 65: // A key
+            console.log("A");
+            scene.view.prp = scene.view.prp.subtract(u);
+            scene.view.srp = scene.view.srp.subtract(u);
+            break;
+        case 68: // D key
+            console.log("D");
+            scene.view.prp = scene.view.prp.add(u);
+            scene.view.srp = scene.view.srp.add(u);
+            break;
+        case 83: // S key
+            console.log("S");
+            scene.view.prp = scene.view.prp.add(n);
+            scene.view.srp = scene.view.srp.add(n);
+            break;
+        case 87: // W key
+            console.log("W");
+            scene.view.prp = scene.view.prp.subtract(n);
+            scene.view.srp = scene.view.srp.subtract(n);
+            break;
+    
+    }
+    drawScene();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -893,7 +906,6 @@ function drawSphere(center, radius, slices, stacks) {
         let circleCenter = [center[0], center[1], center[2] + currentDepth];
         drawSliceCircle(circleCenter, currentRadius, sides, vertices, edges);
     }
-    
     return([vertices,edges]);
 }
 
@@ -932,24 +944,3 @@ function drawSliceCircle(center, radius, sides, vertices, edges) {
     circleEdges.push(offset);
     edges.push(circleEdges);
 }
-/*
-function draw2DCircle(centerOfCircle, sides, radius) {
-    let vertices = [];
-    let edges = [];
-    let xCenter = centerOfCircle[0];
-    let yCenter = centerOfCircle[1];
-    let zCenter = centerOfCircle[2];
-    let incrementAngle = 2 * Math.PI / sides;
-    for(let i = 0; i <= sides; i++) {
-        let x = Math.cos( incrementAngle * i ) * radius + xCenter;
-        let y = yCenter;
-        let z = Math.sin( incrementAngle * i ) * radius + zCenter;
-        let coordinate = Vector4(x, y, z, 1);
-        vertices.push(coordinate);
-    }
-    for(let i = 0; i < sides; i++) {
-        edges.push([i, i+1]);
-    }
-    return([vertices, edges]);
-}
-*/

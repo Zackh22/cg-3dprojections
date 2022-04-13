@@ -23,12 +23,12 @@ Follows same steps as perspective (Patrick and Zack)
 Generate vertices and edges for common models: 5 pts
     Cube: defined by center point, width, height, and depth (1 pt) (Patrick 80% and Zack 20%)
     Cone: defined by center point of base, radius, height, and number of sides (1 pt) (Patrick 10% and Zack 90%)
-    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick 70% and Zack 30%) 
-    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) (Patrick 25% Zack 75%) TODO: entire feature
+    Cylinder: defined by center point, radius, height, and number of sides (1 pt) (Patrick 75% and Zack 25%) 
+    Sphere: defined by center point, radius, number of slices, and number of stacks (2 pts) (Patrick 40% Zack 60%)
 Allow for models to have a rotation animation: 5 pts
     Can be about the x, y, or z axis (Zack 100%) TODO: entire feature
     Defined in terms of revolutions per second (Zack 100%) TODO: entire feature
-Left/right arrow keys: rotate SRP around the v-axis with the PRP as the origin: 5 pts (Zack 100%) TODO: entire feature
+Left/right arrow keys: rotate SRP around the v-axis with the PRP as the origin: 5 pts (Patrick 85% and Zack 15%) - DONE
 
 */
 
@@ -88,10 +88,7 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     Mat4x4ShearXY(shpar, shxpar, shypar);
     // 4. translate near clipping plane to origin
     let Tpar = new Matrix(4, 4);
-    Tpar.values = [[1, 0, 0, 0],
-                  [0, 1, 0, 0],
-                  [0, 0, 1, near],
-                  [0, 0, 0, 1]];
+    Mat4x4Translate(Tpar, 0, 0, near);
     // 5. scale such that view volume bounds are ([-1,1], [-1,1], [-1,0])
     let sperx = 2 / (right - left);
     let spery = 2 / (top - bottom);
@@ -100,20 +97,13 @@ function mat4x4Parallel(prp, srp, vup, clip) {
     Mat4x4Scale(scale, sperx, spery, sperz);
 
     // npar = shpar * tpar * shpar * R * T(-PRP)
-    //console.log("BEFORE Transform");
     let transform = Matrix.multiply([scale, Tpar, shpar, R, translate]);
     console.log("TRANSFORM MATRIX RESULT: ", transform);
-    //console.log("AFTER Transform");
     return transform;
 }
 
 // create a 4x4 matrix to the perspective projection / view matrix
 function mat4x4Perspective(prp, srp, vup, clip) {
-    //console.log("IN FUNCTION mat4x4Perspective");
-    //console.log(prp);
-    //console.log(srp);
-    //console.log(vup);
-    //console.log(clip);
 
     // clip(left, right, bottom, top, near, far)
     let left = clip[0];
@@ -136,16 +126,13 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     var dop = cow;
 
     // 1. translate PRP to origin
-    //console.log("STEP 1");
     // T(-PRP) = [1 0 0 -PRPx; 0 1 0 -PRPy; 0 0 1 -PRPz; 0 0 0 1]
-    //let tprp = Mat4x4Translate(mper, (-1 * prp.x), (-1 * prp.y), (-1 * prp.z));
     let neg_prp = new Vector3(-1 * prp.x, -1 * prp.y, -1 * prp.z);
     let translate = new Matrix(4, 4);
     mat4x4Identity(translate);
     Mat4x4Translate(translate, neg_prp.x, neg_prp.y, neg_prp.z);
 
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
-    //console.log("STEP 2");
     // R = [u1 u2 u3 0; v1 v2 v3 0; n1 n2 n3 0; 0 0 0 1]
 
     // VRC calculations
@@ -166,7 +153,6 @@ function mat4x4Perspective(prp, srp, vup, clip) {
                 [0, 0, 0, 1]];
 
     // 3. shear such that CW is on the z-axis
-    //console.log("STEP 3");
     // shxpar = -DOPx / DOPz
     let shxpar = -1 * dop.x / dop.z;
     // shypar = -DOPy / DOPz
@@ -177,7 +163,6 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     Mat4x4ShearXY(shpar, shxpar, shypar);
     
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
-    //console.log("STEP 4");
     let sperx = (2 * near) / ((right - left) * far);
     let spery = (2 * near) / ((top - bottom) * far);
     let sperz = (1 / far);
@@ -186,11 +171,6 @@ function mat4x4Perspective(prp, srp, vup, clip) {
     let scale = new Matrix(4,4);
     Mat4x4Scale(scale, sperx, spery, sperz);
 
-    //console.log("calculate final transform matrix:");
-    //console.log(scale);
-    //console.log(shpar);
-    //console.log(R);
-    //console.log(translate);
     let transform = Matrix.multiply([scale, shpar, R, translate]);
 
     return transform;
@@ -204,9 +184,9 @@ function mat4x4MPar() {
     // zp = 0
     let mpar = new Matrix(4, 4);
     mpar.values = [[1, 0, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 0, 0, 0],
-                     [0, 0, 0, 1]];
+                   [0, 1, 0, 0],
+                   [0, 0, 0, 0],
+                   [0, 0, 0, 1]];
     return mpar;
 }
 
