@@ -168,6 +168,9 @@ function animate(timestamp) {
  * 
  ****************************/
 function drawScene() {
+    // clear previous frame
+    //console.clear();
+    // console.log(scene);
     ctx.clearRect(0, 0, view.width, view.height);
 
     let sceneType = scene.view.type;
@@ -711,62 +714,6 @@ function drawCylinder(center, radius, height, sides) {
  * 
  ****************************/
 
-function drawSphereBetter(center, radius, slices, stacks) {
-    console.log("SHOULD SEE SPHERE");
-    let vertices = [];
-    let edges = [];
-    
-    stacks = 25;
-    slices = 25;
-    // spherical coordinates: r, theta, phi
-    // theta: [0, pi]
-    // phi: [0, 2pi]
-
-    let sliceAngle = Math.PI / slices;
-    let stackAngle = 2 * Math.PI / stacks;
-
-
-    let dTheta = Math.PI / stacks;
-    let dPhi = 2 * Math.PI / slices;
-    let theta, phi = 0;
-    // x = r cos(phi) sin(theta)
-    // y = r sin(phi) sin(theta)
-    // z = r cos(theta)
-    for(let i = 0; i <= stacks; i++) {
-        let phi = i * dPhi; // go around from 0 to 2pi
-        // generate one slice of vertices
-        for(let j = 0; j < slices; j++) {
-            let theta = j * dTheta; // go up and down at each stack from 0 to pi
-            // each value is center in cartesian plus conversion from spherical coordinates
-            let x = center.x + ( radius * Math.cos(phi) * Math.sin(theta) );
-            let y = center.y + ( radius * Math.sin(phi) * Math.sin(theta) );
-            let z = center.z + ( radius * Math.cos(theta) );
-            // if(i == stacks && j == slices - 1) {
-            //     let point = Vector4(x, y, z, 1);
-            //     vertices.push(point);
-            // }
-            let point = Vector4(x, y, z, 1);
-            vertices.push(point);
-            theta += dTheta;
-        }
-        console.log("ONE SLICE:", vertices, vertices.length);
-    }
-
-    for(let i = 0; i < stacks; i++) { // going around full circles
-        for(let j = 0; j < slices; j++) { // half circles
-            // each iteration of the inner loop needs to be offset by iterations of outer loop
-            // draw from current stack to next stack AND draw from current slice to next slice
-            let offset = slices * i;
-            edges.push( [ offset + j, slices * (i + 1) + j] ); // slices
-            edges.push( [ offset + j, offset + j + 1] );
-            // edges.push( [offset + j, stacks * j + i] );
-            // edges.push( [ offset + j, slices * (i)] ); // stacks
-        }
-    }
-
-    return([vertices,edges]);
-}
-
 function drawSphere(center, radius, slices, stacks) {
     console.log("drawSphere");
     // stacks = 15;
@@ -801,6 +748,14 @@ function drawSphere(center, radius, slices, stacks) {
     return([vertices,edges]);
 }
 
+/****************************
+ * This function calculates the verticies and edges of the stack portion of the sphere
+ * @param center, center point of sphere
+ * @param radius, the radius of the sphere
+ * @param sides, the smoothness of the sphere
+ * @param vertices, is the array of vertecies in the sphere
+ * @param edges, the array of edges in the sphere
+ ****************************/
 function drawStackCircle(center, radius, sides, vertices, edges) {
     let offset = vertices.length;
     // circle vertices
@@ -817,7 +772,14 @@ function drawStackCircle(center, radius, sides, vertices, edges) {
     circleEdges.push(offset);
     edges.push(circleEdges);
 }
-
+/****************************
+ * This function calculates the verticies and edges of the slice portion of the sphere
+ * @param center, center point of sphere
+ * @param radius, the radius of the sphere
+ * @param sides, the smoothness of the sphere
+ * @param vertices, is the array of vertecies in the sphere
+ * @param edges, the array of edges in the sphere
+ ****************************/
 function drawSliceCircle(center, radius, sides, vertices, edges) {
     let offset = vertices.length;
     // circle vertices
