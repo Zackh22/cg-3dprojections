@@ -161,14 +161,16 @@ function animate(timestamp) {
 }
 
 // Main drawing code - use information contained in variable `scene`
+
+/****************************
+ * drawScene()
+ * This function draws either a perspective or parallel scene based on the view type.
+ * 
+ ****************************/
 function drawScene() {
-    // clear previous frame
-    //console.clear();
-    // console.log(scene);
     ctx.clearRect(0, 0, view.width, view.height);
 
     let sceneType = scene.view.type;
-    let modelLength = scene.models.length;
     let prp = scene.view.prp;
     let srp = scene.view.srp;
     let vup = scene.view.vup;
@@ -315,6 +317,14 @@ function outcodePerspective(vertex, z_min) {
 }
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
+/****************************
+ * function(clipLineParallel)
+ * Given a scene view type of parallel, this function clips the line if it leaves the FOV of the camera/scene
+ * @param line, this line parameter contains two points, that have coordinates (x,y,z).
+ * 
+ * @returns a clipped line
+ * 
+ ****************************/
 function clipLineParallel(line) {
     let result = null;
     result = {
@@ -410,6 +420,14 @@ function clipLineParallel(line) {
 }
 
 // Clip line - should either return a new line (with two endpoints inside view volume) or null (if line is completely outside view volume)
+/****************************
+ * Given a scene view type of perspective, this function clips the line if it leaves the FOV of the camera/scene
+ * @param line, this line parameter contains two points, that have coordinates (x,y,z).
+ * @param z_min, this parameter is the lowest z-value to be clipped.
+ * 
+ * @returns a clipped line
+ * 
+ ****************************/
 function clipLinePerspective(line, z_min) {
     //console.log("clipLinePer");
     //console.log(line);
@@ -494,7 +512,12 @@ function clipLinePerspective(line, z_min) {
     return result;
 }
 
-// Called when user presses a key on the keyboard down 
+// Called when user presses a key on the keyboard down
+/****************************
+ * This function shifts the view of the camera, moves the camera left and right, forward and backward, and shifts the direction angle of the camera.
+ * @param event, this event parameter is the push of the left or right arrow or WASD keys
+ * 
+ ****************************/
 function onKeyDown(event) {
 
     let n = scene.view.prp.subtract(scene.view.srp);
@@ -551,7 +574,18 @@ function onKeyDown(event) {
 // SHAPE DRAWING FUNCTIONS                                                         //
 ///////////////////////////////////////////////////////////////////////////////////
 
-function drawCube(center, width, height, depth, currentTheta, axis) {
+/****************************
+ * This function calculates the verticies and edges of the cube
+ * @param center, center point of cube
+ * @param width, the width of the cube
+ * @param height, the height of the cube
+ * @param depth, the depth of the cube
+ * 
+ * @returns [vertices, edges] an array conatianing the verticies and edges.
+ * 
+ ****************************/
+
+function drawCube(center, width, height, depth) {
     let vertices = [];
     let edges = [];
     let x = center.x;
@@ -580,7 +614,16 @@ function drawCube(center, width, height, depth, currentTheta, axis) {
     // draw cube
     return([vertices, edges]);
 }
-
+/****************************
+ * This function calculates the verticies and edges of the cone
+ * @param centerPointOfBase, center point of the base of the cone
+ * @param radius, the radius of the base
+ * @param height, the height of the cone
+ * @param sides, the number of sides the cone has
+ * 
+ * @returns [vertices, edges] an array conatianing the verticies and edges.
+ * 
+ ****************************/
 function drawCone(centerPointOfBase, radius, height, sides) {
     let vertices = [];
     let edges = [];
@@ -611,7 +654,16 @@ function drawCone(centerPointOfBase, radius, height, sides) {
     
     return([vertices, edges]);
 }
-
+/****************************
+ * This function calculates the verticies and edges of the cylinder
+ * @param center, center point of cylinder
+ * @param radius, the radius of the cylinder
+ * @param height, the height of the cylinder
+ * @param sides, the number of sides in the cylinder
+ * 
+ * @returns [vertices, edges] an array conatianing the verticies and edges.
+ * 
+ ****************************/
 function drawCylinder(center, radius, height, sides) {
     let vertices = [];
     let edges = [];
@@ -637,12 +689,6 @@ function drawCylinder(center, radius, height, sides) {
         vertices.push(coordinate);
     }
     // vertices = [circle0, circle0... circle1, circle1...]
-    /*
-            edges = [
-                [bottom circle],
-                [top circle],
-            ]
-    */
 
     // lines between vertices of bottom circle
     for(let i = 0; i < sides - 1; i++) {
@@ -653,6 +699,17 @@ function drawCylinder(center, radius, height, sides) {
     
     return([vertices, edges]);
 }
+
+/****************************
+ * This function calculates the verticies and edges of the sphere
+ * @param center, center point of sphere
+ * @param radius, the radius of the sphere
+ * @param slices, the number of horizontal "circles" in the sphere.
+ * @param stacks, the number of vertical "circles" that are stacked on top of each other
+ * 
+ * @returns [vertices, edges] an array conatianing the verticies and edges.
+ * 
+ ****************************/
 
 function drawSphereBetter(center, radius, slices, stacks) {
     console.log("SHOULD SEE SPHERE");
@@ -668,24 +725,6 @@ function drawSphereBetter(center, radius, slices, stacks) {
     let sliceAngle = Math.PI / slices;
     let stackAngle = 2 * Math.PI / stacks;
 
-    // for(let i = 0; i < stacks + 1; i++) {
-    //     let phi = i * stackAngle;
-    //     for(let j = 0; j < slices; j++) {
-    //         let theta = j * sliceAngle;
-    //         let x = center[0] + radius * Math.cos(theta) * Math.sin(phi);
-    //         let y = center[1] + radius * Math.cos(phi);
-    //         let z = center[2] + radius * Math.sin(phi) * Math.sin(theta);
-    //         let point = Vector4(x, y, z, 1);
-    //         vertices.push(point);
-    //     }
-    // }
-
-    // for(let i = 0; i < stacks; i++) {
-    //     for(let j = 0; j < slices; j++) {
-    //         edges.push([slices * i + j, slices * (i + 1) + j]);
-    //         edges.push([slices * i + j, slices * i + j + 1]);
-    //     }
-    // }
 
     let dTheta = Math.PI / stacks;
     let dPhi = 2 * Math.PI / slices;
@@ -795,7 +834,9 @@ function drawSliceCircle(center, radius, sides, vertices, edges) {
     circleEdges.push(offset);
     edges.push(circleEdges);
 }
-
+/****************************
+ * This function generates the vertices and edges of the shapes in the animate function and json files.
+ ****************************/
 function generateModels() {
     for(let i = 0; i < scene.models.length; i++) {
         //console.clear();
@@ -856,6 +897,7 @@ function loadNewScene() {
             }
             scene.models[i].matrix = new Matrix(4, 4);
         }
+        //added for the json files
         generateModels();
     };
     reader.readAsText(scene_file.files[0], 'UTF-8');
